@@ -356,30 +356,24 @@
 				}
 				
 				atualizarMapaDuranteAInicializacao(secretKVDB,nomeDaChaveNoKVDB);
-				var markerUserCurrentLocation;// = L.marker([e.lat,e.len],{icon: greenIconYellow}).addTo(map);
-		var watchId ;
+				var markerUserCurrentLocation=null;// = L.marker([e.lat,e.len],{icon: greenIconYellow}).addTo(map);
+		var watchId =null;
 					// check for Geolocation support
 		if (navigator.geolocation) {
 		//alert('Geolocation is supported!');
 
 				window.onload = function() {
-					var startPos;
-					var geoSuccess = function(position) {
-						//alert("sucesso 1");
-						startPos = position;
-						//document.getElementById('startLat').innerHTML = startPos.coords.latitude;
-						//document.getElementById('startLon').innerHTML = startPos.coords.longitude;
-						map.setView([startPos.coords.latitude, startPos.coords.longitude], 10);
-						//alert("sucesso 2");
-					};
-					navigator.geolocation.getCurrentPosition(geoSuccess);
+						var startPos;
+						var geoSuccess = function(position) {
+							startPos = position;
+							map.setView([startPos.coords.latitude, startPos.coords.longitude], 10);
+						};
+						navigator.geolocation.getCurrentPosition(geoSuccess);
 					};
 
 
 					watchId = navigator.geolocation.watchPosition(function(position) {
-						// document.getElementById('currentLat').innerHTML = position.coords.latitude; 
-						//document.getElementById('currentLon').innerHTML = position.coords.longitude;
-						markerUserCurrentLocation=markerUserCurrentLocation?L.marker([position.coords.latitude,position.coords.longitude],{icon: greenIconTriumph}).addTo(map):markerUserCurrentLocation;
+						markerUserCurrentLocation=markerUserCurrentLocation?markerUserCurrentLocation:L.marker([position.coords.latitude,position.coords.longitude],{icon: greenIconYellow}).addTo(map);
 						markerUserCurrentLocation.setLatLng([position.coords.latitude,position.coords.longitude]); 
 					});
 		
