@@ -23,6 +23,11 @@
 	<body>
 		<div id="mapid" class="map"></div>
 		<script>
+
+		
+
+
+
 				var nomeDaChaveNoKVDB='listaComLocalizacoes';
 
 				var secretKVDB='QNJHm6Mr5N6QRbsj4XraGf';
@@ -160,7 +165,7 @@
 					text: 'Onde tem Triumph?',
 					callback: ondeTemTriumph
 				}]
-				}).setView([-15.628326978852627, -56.14013671875001], 8);
+				});//.setView([-15.628326978852627, -56.14013671875001], 8);
 
 				L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
 						attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
@@ -340,8 +345,30 @@
 							}
 					})
 				}
-
+				
 				atualizarMapaDuranteAInicializacao(secretKVDB,nomeDaChaveNoKVDB);
+
+					// check for Geolocation support
+		if (navigator.geolocation) {
+		//alert('Geolocation is supported!');
+
+				window.onload = function() {
+					var startPos;
+					var geoSuccess = function(position) {
+						startPos = position;
+						document.getElementById('startLat').innerHTML = startPos.coords.latitude;
+						document.getElementById('startLon').innerHTML = startPos.coords.longitude;
+						map.setView([startPos.coords.latitude, startPos.coords.longitude], 8)
+					};
+					navigator.geolocation.getCurrentPosition(geoSuccess);
+					};
+
+		}
+		else {
+			alert('Geolocation is not supported for this Browser/OS.');
+			map.setView([-15.628326978852627, -56.14013671875001], 8)
+		}
+
 
 function ondeTemTriumph(){
 JSON.parse(
