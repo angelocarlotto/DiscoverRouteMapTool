@@ -355,12 +355,12 @@
 				window.onload = function() {
 					var startPos;
 					var geoSuccess = function(position) {
-						alert("sucesso 1");
+						//alert("sucesso 1");
 						startPos = position;
 						//document.getElementById('startLat').innerHTML = startPos.coords.latitude;
 						//document.getElementById('startLon').innerHTML = startPos.coords.longitude;
 						map.setView([startPos.coords.latitude, startPos.coords.longitude], 10);
-						alert("sucesso 2");
+						//alert("sucesso 2");
 					};
 					navigator.geolocation.getCurrentPosition(geoSuccess);
 					};
