@@ -40,6 +40,15 @@
 					popupAnchor: [1, -34]
 					//shadowSize: [41, 41]
 				});
+				
+				var greenIconYellow = new L.Icon({
+					iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
+					shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+					iconSize: [25, 41],
+					iconAnchor: [12, 41],
+					popupAnchor: [1, -34],
+					shadowSize: [41, 41]
+				});
 
 				var greenIconSendoExcluido = new L.Icon({
 					iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
@@ -370,7 +379,14 @@
 			alert('Geolocation is not supported for this Browser/OS.');
 			map.setView([-15.628326978852627, -56.14013671875001], 10)
 		}
-
+		var markerUserCurrentLocation;// = L.marker([e.lat,e.len],{icon: greenIconYellow}).addTo(map);
+		var watchId = navigator.geolocation.watchPosition(function(position) {
+			// document.getElementById('currentLat').innerHTML = position.coords.latitude; 
+			//document.getElementById('currentLon').innerHTML = position.coords.longitude;
+			markerUserCurrentLocation=markerUserCurrentLocation?L.marker([position.coords.latitude,position.coords.longitude],{icon: greenIconTriumph}).addTo(map):markerUserCurrentLocation;
+			markerUserCurrentLocation.setLatLng([position.coords.latitude,position.coords.longitude]); 
+			
+	    });
 
 		function ondeTemTriumph(){
 					JSON.parse(
