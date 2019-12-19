@@ -165,7 +165,7 @@
 					text: 'Onde tem Triumph?',
 					callback: ondeTemTriumph
 				}]
-				});//.setView([-15.628326978852627, -56.14013671875001], 8);
+				}).setView([-15.628326978852627, -56.14013671875001], 8);
 
 				L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
 						attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
@@ -355,10 +355,12 @@
 				window.onload = function() {
 					var startPos;
 					var geoSuccess = function(position) {
+						alert("sucesso 1");
 						startPos = position;
-						document.getElementById('startLat').innerHTML = startPos.coords.latitude;
-						document.getElementById('startLon').innerHTML = startPos.coords.longitude;
-						map.setView([startPos.coords.latitude, startPos.coords.longitude], 8)
+						//document.getElementById('startLat').innerHTML = startPos.coords.latitude;
+						//document.getElementById('startLon').innerHTML = startPos.coords.longitude;
+						map.setView([startPos.coords.latitude, startPos.coords.longitude], 10);
+						alert("sucesso 2");
 					};
 					navigator.geolocation.getCurrentPosition(geoSuccess);
 					};
@@ -366,7 +368,7 @@
 		}
 		else {
 			alert('Geolocation is not supported for this Browser/OS.');
-			map.setView([-15.628326978852627, -56.14013671875001], 8)
+			map.setView([-15.628326978852627, -56.14013671875001], 10)
 		}
 
 
