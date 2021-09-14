@@ -2,7 +2,7 @@
 <head>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-
+    <script src='https://unpkg.com/tesseract.js@v2.0.0-alpha.13/dist/tesseract.min.js'></script>
 </head>
 <body>
 
@@ -10,6 +10,21 @@
 
 <center> 
     <body>
+<div>
+        <select id="langsel">
+            <option value='eng' selected> English </option>
+          </select>
+          <input type="file" id="file-1" class="inputfile" />
+          <img id="selected-image"  src="" />
+          <div id="log">
+              <span id="startPre">  
+                  <a id="startLink" href="#">Click here to recognize text</a> or choose your own image
+              </span>
+          </div>
+
+        </div>
+
+
     <div id="container">
     <video width="200" height="200" autoplay="true" id="video">
     </video>
@@ -52,7 +67,16 @@ var video = document.querySelector("#video");
  document.getElementById("printresult").innerHTML = resultb64;
 
 
-
+ const worker = new Tesseract.TesseractWorker();
+worker.recognize(file, $("#langsel").val())
+.progress(function(packet){
+    console.info(packet)
+    progressUpdate(packet)
+})
+.then(function(data){
+    console.log(data)
+    progressUpdate({ status: 'done', data: data })
+})
 
 
 </script>
