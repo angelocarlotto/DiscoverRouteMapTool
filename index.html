@@ -248,7 +248,7 @@
 						c.setRadius(distance);
 						l.setLatLngs([c.getLatLng(),e.latlng])
 						l.setText("");
-						l.setText(new String(Math.trunc(distance/1000))+" Km", {center: true});
+						l.setText(new String((distance/1000).toFixed(4))+" Km", {center: true});
 					}
 
 					else if(l){
@@ -257,7 +257,7 @@
 						//c.setRadius(distance);
 						l.setLatLngs([l.getLatLngs()[0],e.latlng])
 						l.setText("");
-						l.setText(new String(Math.trunc(distance/1000))+" Km", {center: true});
+						l.setText(new String((distance/1000).toFixed(4))+" Km", {center: true});
 					}
 				})
 
