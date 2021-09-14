@@ -66,8 +66,10 @@ var video = document.querySelector("#video");
  }
  document.getElementById("printresult").innerHTML = resultb64;
 
+$("#file-1").change(function(a,b,c){
 
- const worker = new Tesseract.TesseractWorker();
+    console.log(a,b,c)
+    const worker = new Tesseract.TesseractWorker();
 worker.recognize(file, $("#langsel").val())
 .progress(function(packet){
     console.info(packet)
@@ -79,6 +81,9 @@ worker.recognize(file, $("#langsel").val())
 })
 
 
+
+})
+ 
 </script>
 
 </html>
