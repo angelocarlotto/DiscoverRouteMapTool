@@ -227,26 +227,34 @@ function getCookie(cname) {
 					callback: addLine
 				}
 				//, '-'
-				, {separator:true},
-				{
+				, {separator:true}
+				,{
 					text: 'Add marquer here',
 					callback: eventoDisparadoAoClicarNoMapa
-				}, {
+				}
+				, {
 					text: 'What coordinate is here?',
 					callback: showCoordinates
-				}, {
-					text: 'From',
-					callback: tragetoriaDe
-				}, {
-					text: 'To',
-					callback: tragetoriaAte
-				}, {
-					text: 'Add to Route',
-					callback: adicionarAoFim
-				}, {
+				}
+				, {
 					text: 'Where has Triumph?',
 					callback: ondeTemTriumph
-				}]
+				}
+				, {separator:true}
+				, {
+					text: 'From',
+					callback: tragetoriaDe
+				}
+				, {
+					text: 'To',
+					callback: tragetoriaAte
+				}
+				, {
+					text: 'Add to Route',
+					callback: adicionarAoFim
+				}
+				
+			]
 				}).setView([-15.628326978852627, -56.14013671875001], 8);
 
 			/*	L.mapbox.accessToken = 'pk.eyJ1IjoiYW5nZWxvY2FybG90dG8iLCJhIjoiY2t0azFnNHhyMWhnZTJ1cGlwOTk3amk3dyJ9.aebSrJgQ1QtBtnmMml2dHg';
