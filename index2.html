@@ -70,7 +70,7 @@ $("#file-1").change(function(a,b,c){
 
     console.log(a,b,c)
     const worker = new Tesseract.TesseractWorker();
-worker.recognize(file, $("#langsel").val())
+worker.recognize($(this)[0].files[0], $("#langsel").val())
 .progress(function(packet){
     console.info(packet)
     progressUpdate(packet)
