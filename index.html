@@ -222,16 +222,16 @@ function getCookie(cname) {
 				contextmenu: true,
 				//contextmenuWidth: 140,
 				contextmenuItems: [{
-					text: 'Draw circle',
+					text: 'Draw circle (start here)',
 					callback: addCircle
 				}, {
-					text: 'Draw line',
+					text: 'Draw line (start here)',
 					callback: addLine
 				}
 				//, '-'
 				, {separator:true}
 				,{
-					text: 'Add marquer here',
+					text: 'Add marker here',
 					callback: eventoDisparadoAoClicarNoMapa
 				}
 				, {
@@ -239,7 +239,7 @@ function getCookie(cname) {
 					callback: showCoordinates
 				}
 				, {
-					text: 'Where has Triumph?',
+					text: 'Show me all Triumph?',
 					callback: ondeTemTriumph
 				}
 				, {separator:true}
@@ -466,7 +466,7 @@ function getCookie(cname) {
 						var geoSuccess = function(position) {
 							startPos = position;
 							map.setView([startPos.coords.latitude, startPos.coords.longitude], 10);
-							map.contextmenu.showAt([startPos.coords.latitude,startPos.coords.longitude]);
+							
 						};
 						navigator.geolocation.getCurrentPosition(geoSuccess);
 					};
@@ -475,6 +475,7 @@ function getCookie(cname) {
 					watchId = navigator.geolocation.watchPosition(function(position) {
 						markerUserCurrentLocation=markerUserCurrentLocation?markerUserCurrentLocation:L.marker([position.coords.latitude,position.coords.longitude],{icon: greenIconYellow}).addTo(map);
 						markerUserCurrentLocation.setLatLng([position.coords.latitude,position.coords.longitude]); 
+						map.contextmenu.showAt([position.coords.latitude,position.coords.longitude]);
 					});
 					
 
