@@ -252,7 +252,7 @@ function getCookie(cname) {
 					callback: tragetoriaAte
 				}
 				, {
-					text: 'N-Add to Route',
+					text: 'N-Add to the Route end',
 					callback: adicionarAoFim
 				}
 				
@@ -475,7 +475,7 @@ function getCookie(cname) {
 						markerUserCurrentLocation=markerUserCurrentLocation?markerUserCurrentLocation:L.marker([position.coords.latitude,position.coords.longitude],{icon: greenIconYellow}).addTo(map);
 						markerUserCurrentLocation.setLatLng([position.coords.latitude,position.coords.longitude]); 
 					});
-		
+					map.contextmenu.showAt([0,0]);
 
 		}
 		else {
