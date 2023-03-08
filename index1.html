@@ -11,18 +11,18 @@
 		</style>
 
 		
-<!--
+
 <a href="index2.html">Teseract</a>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8459058879300599"
      crossorigin="anonymous"></script>
 	 
 <!-- mapas adsense -->
-<!-- <ins class="adsbygoogle"
+<ins class="adsbygoogle"
      style="display:inline-block;width:728px;height:90px"
      data-ad-client="ca-pub-8459058879300599"
-     data-ad-slot="4229002660"></ins> -->
+     data-ad-slot="4229002660"></ins>
 <script>
-    //  (adsbygoogle = window.adsbygoogle || []).push({});
+     (adsbygoogle = window.adsbygoogle || []).push({});
 </script>
 
 
@@ -61,7 +61,7 @@
 		<script>
 
 		
-/*
+
 function setCookie(cname, cvalue, exdays) {
   const d = new Date();
   d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
@@ -95,36 +95,17 @@ function getCookie(cname) {
   }
   return "";
 }
-*/
 
-function uuidv4() {
-  return 'xxyxxxyxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-}
 
 				var nomeDaChaveNoKVDB='listaComLocalizacoes';
 
 				//var secretKVDB='QNJHm6Mr5N6QRbsj4XraGf';
 
-				//let secretKVDB=getCookie("secretKVDB");
-
-				var secretKVDB = null;
-				var queryString = window.location.search;
-				if (queryString) {
-				var params = new URLSearchParams(queryString);
-					if (params.has('id') ) {
-						secretKVDB = params.get('id');
-					}
-				}
-
+				let secretKVDB=getCookie("secretKVDB");
 
 				if(!secretKVDB){
 					criarNovaSecret();
-				}
-				else{
-						console.log(secretKVDB)
+					
 				}
 				var greenIconTriumph = new L.Icon({
 					iconUrl: 'https://www.triumphmotorcycles.com/images/map-icons/0.png',					
@@ -180,37 +161,13 @@ function uuidv4() {
 				});
 
 				function addCircle(e){
-					console.log(e)
 						l=L.polyline([[e.latlng.lat, e.latlng.lng],[e.latlng.lat, e.latlng.lng]], {color: 'red'}).addTo(map);
-						l.id=uuidv4();
 						c=L.circle(  [e.latlng.lat, e.latlng.lng], 1*1000).addTo(map); console.log(c);
-						c.id=l.uuidv4;
-						c.on("click",  function(originalEvent){
-							if(c==null) {
-								console.log(this,originalEvent);
-								map.removeLayer(this);
-							}
-						})
-						l.on("click",  function(originalEvent){
-							if(l==null) {
-								console.log(this,originalEvent)
-								map.removeLayer(this);
-							}
-						})
-						objDadosRecuperadosServidor.circulos.push(c);
-						objDadosRecuperadosServidor.linhas.push(l);
+						arrayCirculos.push(c);
 				}
 
 				function addLine(e){
 						  l=L.polyline([[e.latlng.lat, e.latlng.lng],[e.latlng.lat, e.latlng.lng]], {color: 'red'}).addTo(map);
-						  l.on("click",  function(originalEvent){
-							if(l==null) {
-								console.log(this,originalEvent)
-								map.removeLayer(this);
-							}
-						})
-						  objDadosRecuperadosServidor.linhas.push(l);
-						  
 				}
 
 				function showCoordinates (e) {
@@ -323,22 +280,22 @@ function uuidv4() {
 }).addTo(map);
 
 
-				var countMarcadoresSendoExcluido=0;
+				var count=0;
 
 				function eventoDisparadoAoClicarNoMapa(e) {
-				// se c é verdadeiro significa que o usuario esta setando o raio do circulo, e para finalizar torna o c nulo novamente
+				// se c é verdadeiro significa que o usuario esta setando o raio do circulo
 					if(c){
 						c=null;
 					}else{
-						if(countMarcadoresSendoExcluido==0){//este if é para previnir que duas requisiçõe ssejam criadas ao mesmo tempo, sem que a anterior tenha sido concluida. Quando isto ocorre, o primeiro marcador é perdido desvido a uma questão de sincronia
-							countMarcadoresSendoExcluido++;
-							console.log( countMarcadoresSendoExcluido);	
+						if(count==0){//este if é para previnir que duas requisiçõe ssejam criadas ao mesmo tempo, sem que a anterior tenha sido concluida. Quando isto ocorre, o primeiro marcador é perdido desvido a uma questão de sincronia
+							count++;
+							console.log( count);	
 							var marker = L.marker([e.latlng.lat, e.latlng.lng],{icon: greenIconInseridoENaoSalvo}).addTo(map);
 							var POPUP=marker.bindPopup("");
 							//console.log(e);
 							marker.on("popupopen", onPopupOpen);	
 							e.latlng.id=marker._leaflet_id;
-							AtualizarConjuntoDeLocalizacoes(secretKVDB,nomeDaChaveNoKVDB,e.latlng,function(){ marker.setIcon(greenIconInseridoESalvo);countMarcadoresSendoExcluido--;},true,"marcadores");					
+							AtualizarConjuntoDeLocalizacoes(secretKVDB,nomeDaChaveNoKVDB,e.latlng,function(){ marker.setIcon(greenIconInseridoESalvo);count--;});					
 						}
 					}
 				}
@@ -354,9 +311,8 @@ function uuidv4() {
 
 				var c,l;
 
-				//var arrayCirculos=[];
-				//var arrayLinhas=[];
-				var objDadosRecuperadosServidor= {marcadores:[],circulos:[],linhas:[]};
+				var arrayCirculos=[];
+
 				map.on('mousemove',function(e){
 
 					if(c){
@@ -379,12 +335,6 @@ function uuidv4() {
 				})
 
 				function criarNovaSecret(){
-					/*fetch("https://kvdb.io/",{method:"post"
-											,headers: {"Content-Type": "application/json" }
-											,body: JSON.stringify( {email:"angelocarlotto@gmail.com"} )} )
-					.then((response) => response.text())
-					.then(data=>console.log(data))*/
-
 				$.ajax({
 						method:'post',
 						data:'email=angelocarlotto@gmail.com',
@@ -393,42 +343,38 @@ function uuidv4() {
 						success: function(data){
 						console.log(data);
 							secretKVDB=data;
-							//setCookie("secretKVDB",data,10);
-							atualizarOuCriarKey(secretKVDB,nomeDaChaveNoKVDB,JSON.stringify(  {marcadores:[],circulos:[],linhas:[]}))
-							//secretKVDB = uuidv4();
-							//window.location.href.replaceAll("?id=","");
-							var newUrl = window.location.href+ '?id=' + secretKVDB;
-							window.history.pushState({path:newUrl},'',newUrl);
+							setCookie("secretKVDB",data,10);
+							atualizarOuCriarKey(secretKVDB,nomeDaChaveNoKVDB,JSON.stringify( []))
 							//process the JSON data etc
 
 						}
 				})
 			}
-				
-			
-				function AtualizarConjuntoDeLocalizacoes(secret,key,objCRUD,onsuccess,isPush,nomeObj){
+				var array2;
+				function AtualizarConjuntoDeLocalizacoes(secret,key,latlng,onsuccess,push){
 					$.ajax({
 
 							 url: 'https://kvdb.io/'+secret+"/"+key,
 
 							 success: function(data){
 
-								objDadosRecuperadosServidor=JSON.parse(data);
+								var dados=JSON.parse(data);
 								//console.log(dados);
-								if(isPush!=false){
-									objDadosRecuperadosServidor[nomeObj].push(objCRUD);
+								if(push!=false){
+									dados.push(latlng);
 								}
 								else{
-									objDadosRecuperadosServidor[nomeObj]=objDadosRecuperadosServidor[nomeObj].filter(function(e){return e.id!=objCRUD.id;});
+									dados=dados.filter(function(e){return e.id!=latlng.id;});
 								}
-								console.log("oi2")
-								atualizarOuCriarKey(secret,key,JSON.stringify( objDadosRecuperadosServidor),onsuccess);
+								array2=dados;
+								atualizarOuCriarKey(secret,key,JSON.stringify( dados),onsuccess);
 
 							},
 							error:function(){
 								console.log('A chave nao existe, sera criada agora...');
-								atualizarOuCriarKey(secretKVDB,nomeDaChaveNoKVDB,JSON.stringify( {marcadores:[],circulos:[],linhas:[]}));
-								AtualizarConjuntoDeLocalizacoes(secretKVDB,nomeDaChaveNoKVDB,objCRUD);
+								atualizarOuCriarKey(secretKVDB,nomeDaChaveNoKVDB,JSON.stringify( []));
+
+									AtualizarConjuntoDeLocalizacoes(secretKVDB,nomeDaChaveNoKVDB,latlng);
 							}
 					})
 				}
@@ -466,20 +412,16 @@ function uuidv4() {
 
 				function onPopupOpen(a,b){
 
-				if(countMarcadoresSendoExcluido==0){
-					countMarcadoresSendoExcluido++
-				//a.popup._content="indo...";
+				if(count==0){
+				count++
 					a.popup._source.setIcon(greenIconSendoExcluido);
-					console.log(a)
 					//tem que melhorar a logica de identificar qual item do arrayq ue est no banco de dados deve ser excluido, ta zuado
 					var latlng=a.popup._source.getLatLng();
 					latlng.id=a.popup._source._leaflet_id;
 					AtualizarConjuntoDeLocalizacoes(secretKVDB,nomeDaChaveNoKVDB,latlng,function(){
 						map.removeLayer(a.popup._source);
-						countMarcadoresSendoExcluido--;
-					},false,"marcadores");
-					}else{
-
+						count--;
+					},false);
 					}
 				}
 
@@ -491,24 +433,23 @@ function uuidv4() {
 							url: 'https://kvdb.io/'+secret+"/"+key,
 							 success: function(data){
 								 console.log(data);
-								 objDadosRecuperadosServidor=JSON.parse( data);
+								 var array=JSON.parse( data);
 
-								 $(objDadosRecuperadosServidor["marcadores"]).each(function(i,e){
-									var marker = L.marker([e.lat, e.lng],{ icon: greenIconRecuperado}).addTo(map);
+								 $(array).each(function(i,e){
+									var marker = L.marker([e.lat, e.lng],{icon: greenIconRecuperado}).addTo(map);
 									e.id=marker._leaflet_id;
 									//var POPUP=marker.bindPopup("<b>Remover?</b><button style='background-color:red' data-latlang=''>x</button><br>I am a popup.");
 									var POPUP=marker.bindPopup("");
-								    //console.log(e);
+								//	console.log(e);
 									marker.on("popupopen", onPopupOpen);
 								 });
-								 //console.log("oi")
-								//objDadosRecuperadosServidor=objDadosRecuperadosServidor;
-								atualizarOuCriarKey(secretKVDB,nomeDaChaveNoKVDB,JSON.stringify(objDadosRecuperadosServidor));
+								array2=array;
+								atualizarOuCriarKey(secretKVDB,nomeDaChaveNoKVDB,JSON.stringify(array));
 
 							},
 							error:function(){
 								console.log('Durante a inicialização percebeu-se que a chave nao existe, então sera criada agora...');
-								atualizarOuCriarKey(secretKVDB,nomeDaChaveNoKVDB,JSON.stringify( {marcadores:[],circulos:[],linhas:[]}));
+								atualizarOuCriarKey(secretKVDB,nomeDaChaveNoKVDB,JSON.stringify( []));
 							}
 					})
 				}
