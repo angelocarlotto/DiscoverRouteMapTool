@@ -53,9 +53,7 @@
           caso esteja acessando a pagina pelo computador , clique com botão
           direito para opções
         </li>
-		<li>
-			Ultima Atualização: 09/03/2023
-		  </li>
+        <li>Ultima Atualização: 09/03/2023</li>
       </ul>
     </div>
     <div id="mapid" class="map"></div>
@@ -152,12 +150,12 @@
           return dados;
         }
 
-        async adicionarCirculo(id, latLngCentro, radio, latLngLinha) {
+        async adicionarCirculo(id, latLngCentro, raio, latLngLinha) {
           var dados = await this.getDados();
           dados.circulos.push({
             id: id,
             centro: latLngCentro,
-            radio: radio,
+            raio: raio,
             linha: latLngLinha,
           });
           this.setDados(dados);
@@ -177,7 +175,7 @@
 
           this.setDados(dados);
         }
-		async removerCirculo(id) {
+        async removerCirculo(id) {
           var dados = await this.getDados();
           dados.circulos = dados.circulos.filter(function (e) {
             return e.id != id;
@@ -186,7 +184,7 @@
           this.setDados(dados);
         }
 
-		async removerLinha(id) {
+        async removerLinha(id) {
           var dados = await this.getDados();
           dados.linhas = dados.linhas.filter(function (e) {
             return e.id != id;
@@ -197,7 +195,7 @@
 
         async adicionarLinha(id, latLngs) {
           var dados = await this.getDados();
-          dados.linhas.push({  id, latLngs });
+          dados.linhas.push({ id, latLngs });
           this.setDados(dados);
         }
 
@@ -233,7 +231,7 @@
           { color: "red" }
         ).addTo(map);
 
-        c = L.circle([e.latlng.lat, e.latlng.lng], 1 * 1000).addTo(map);
+        c = L.circle([e.latlng.lat, e.latlng.lng], 1 * 10000).addTo(map);
 
         c.idLinha = l._leaflet_id;
 
@@ -241,9 +239,41 @@
           if (c == null) {
             map.removeLayer(this);
             map.removeLayer(map._layers[this.idLinha]);
-			bancoDeDados.removerCirculo(this._leaflet_id);
+            bancoDeDados.removerCirculo(this._leaflet_id);
           }
         });
+      }
+
+      function addCircle2(e) {
+        l = L.polyline(
+          [
+            [e.linha[0].lat, e.linha[0].lng],
+            [e.linha[1].lat, e.linha[1].lng],
+          ],
+          { color: "red" }
+        ).addTo(map);
+
+		var distance = map.distance(e.linha[0], e.linha[1]);
+        l.setText("");
+        l.setText(new String((distance / 1000).toFixed(4)) + " Km", {
+          center: true,
+        });
+
+        c = L.circle([e.centro.lat, e.centro.lng],distance).addTo(map);
+
+        c.idLinha = l._leaflet_id;
+
+        c.on("click", async function (originalEvent) {
+          if (c == null) {
+            map.removeLayer(this);
+            map.removeLayer(map._layers[this.idLinha]);
+            bancoDeDados.removerCirculo(this._leaflet_id);
+          }
+        });
+
+		
+
+		l=null;c=null;
       }
 
       function addLine(e) {
@@ -258,9 +288,34 @@
         l.on("click", function (originalEvent) {
           if (l == null) {
             map.removeLayer(this);
-			bancoDeDados.removerLinha(this._leaflet_id);
+            bancoDeDados.removerLinha(this._leaflet_id);
           }
         });
+      }
+
+      function addLine2(latlng1, latLng2) {
+        l = L.polyline(
+          [
+            [latlng1.lat, latlng1.lng],
+            [latLng2.lat, latLng2.lng],
+          ],
+          { color: "red" }
+        ).addTo(map);
+
+        l.on("click", function (originalEvent) {
+          if (l == null) {
+            map.removeLayer(this);
+            bancoDeDados.removerLinha(this._leaflet_id);
+          }
+        });
+
+        var distance = map.distance(latlng1, latLng2);
+        l.setText("");
+        l.setText(new String((distance / 1000).toFixed(4)) + " Km", {
+          center: true,
+        });
+
+        l = null;
       }
 
       function showCoordinates(e) {
@@ -286,7 +341,7 @@
           de = null;
           ate = null;
         }
-	}
+      }
 
       function criarRota(_de, _ate, _map) {
         return L.Routing.control({
@@ -349,13 +404,22 @@
       async function atualizarMapaDuranteAInicializacao() {
         let dados = await bancoDeDados.getDados();
 
-        $(dados["marcadores"]).each(function (i, e) {
+        $(dados.marcadores).each(function (i, e) {
           var marker = L.marker([e.lat, e.lng], {
             icon: greenIconRecuperado,
           }).addTo(map);
           e.id = marker._leaflet_id;
           var POPUP = marker.bindPopup("");
           marker.on("popupopen", onPopupOpen);
+		  
+        });
+
+        $(dados.linhas).each(function (i, e) {
+          addLine2(e.latLngs[0], e.latLngs[1]);
+        });
+
+		$(dados.circulos).each(function (i, e) {
+          addCircle2(e);
         });
 
         await bancoDeDados.setDados(dados);
@@ -746,12 +810,17 @@
       map.on("click", function (e) {
         if (c) {
           console.log("circulo adicionado", c, l);
-          bancoDeDados.adicionarCirculo(c._leaflet_id, c._latlng,c._mRadius, l._latlngs);
+          bancoDeDados.adicionarCirculo(
+            c._leaflet_id,
+            c._latlng,
+            c._mRadius,
+            l._latlngs
+          );
           c = null;
           l = null;
         } else if (l) {
           console.log("linha adicionado", l);
-		  bancoDeDados.adicionarLinha(l._leaflet_id, l._latlngs);
+          bancoDeDados.adicionarLinha(l._leaflet_id, l._latlngs);
           l = null;
         }
       });
@@ -827,6 +896,7 @@
 
     <script>
       var nomeDaChaveNoKVDB = "listaComLocalizacoes";
+      let email = "angelocarlotto@gmail.com";
       let bancoDeDados = new BancoDeDados();
       var secretKVDB = null;
       var queryString = window.location.search;
@@ -838,31 +908,26 @@
       }
 
       if (!secretKVDB) {
-        BancoDeDados.getNewKey("angelocarlotto@gmail.com").then(
-          async (novaChave) => {
-            bancoDeDados = new BancoDeDados(
-              novaChave,
-              nomeDaChaveNoKVDB,
-              "angelocarlotto@gmail.com"
-            );
+        BancoDeDados.getNewKey(email).then(async (novaChave) => {
+          bancoDeDados = new BancoDeDados(
+            novaChave,
+            nomeDaChaveNoKVDB,
+            "angelocarlotto@gmail.com"
+          );
 
-            await bancoDeDados.setDados({
-              marcadores: [],
-              circulos: [],
-              linhas: [],
-            });
+          await bancoDeDados.setDados({
+            marcadores: [],
+            circulos: [],
+            linhas: [],
+          });
 
-            var newUrl = window.location.href + "?id=" + novaChave;
-            window.history.pushState({ path: newUrl }, "", newUrl);
-            atualizarMapaDuranteAInicializacao();
-          }
-        );
+          var newUrl = window.location.href + "?id=" + novaChave;
+          window.history.pushState({ path: newUrl }, "", newUrl);
+          atualizarMapaDuranteAInicializacao();
+        });
       } else {
-        bancoDeDados = new BancoDeDados(
-          secretKVDB,
-          nomeDaChaveNoKVDB,
-          "angelocarlotto@gmail.com"
-        );
+        bancoDeDados = new BancoDeDados(secretKVDB, nomeDaChaveNoKVDB, email);
+
         atualizarMapaDuranteAInicializacao();
       }
     </script>
