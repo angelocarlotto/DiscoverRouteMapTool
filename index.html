@@ -10,8 +10,12 @@
       }
     </style>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
-
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+      integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+      crossorigin=""
+    />
 
     <link
       rel="stylesheet"
@@ -28,7 +32,11 @@
       crossorigin="anonymous"
     ></script>
 
-	<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+    <script
+      src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+      integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+      crossorigin=""
+    ></script>
 
     <script src="https://cdn.jsdelivr.net/npm/leaflet-textpath@1.2.0/leaflet.textpath.min.js"></script>
     <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
@@ -46,9 +54,10 @@
           caso esteja acessando a pagina pelo computador , clique com botão
           direito para opções
         </li>
-        <li>Ultima Atualização: 09/03/2023 3</li>
+        <li>Ultima Atualização: 09/03/2023 4</li>
       </ul>
     </div>
+    <div id="divStatus" style="font-size:26px;color: red;"></div>
     <div id="mapid" class="map"></div>
 
     <script>
@@ -900,29 +909,51 @@
           secretKVDB = params.get("id");
         }
       }
-
+      divStatus.innerHTML="carregando dados da API"
       if (!secretKVDB) {
+        divStatus.innerHTML="criando nova chave da API"
         BancoDeDados.getNewKey(email).then(async (novaChave) => {
           bancoDeDados = new BancoDeDados(
             novaChave,
             nomeDaChaveNoKVDB,
             "angelocarlotto@gmail.com"
           );
-
+          divStatus.innerHTML="nova chave obtida. inicializando dados."
           await bancoDeDados.setDados({
             marcadores: [],
             circulos: [],
             linhas: [],
           });
-
+          divStatus.innerHTML="dados atualizado. pode utilizar a aplicação =]"
           var newUrl = window.location.href + "?id=" + novaChave;
           window.history.pushState({ path: newUrl }, "", newUrl);
           atualizarMapaDuranteAInicializacao();
         });
       } else {
+        console.log(8);
         bancoDeDados = new BancoDeDados(secretKVDB, nomeDaChaveNoKVDB, email);
+        divStatus.innerHTML="atualizando dados"
+        atualizarMapaDuranteAInicializacao().then(e=>divStatus.innerHTML="dados atualizado. pode utilizar a aplicação =]").catch((e) => {
+          divStatus.innerHTML="ocorreu um erro com a chave informada. :( buscando nova chave";
+          BancoDeDados.getNewKey(email).then(async (novaChave) => {
+            bancoDeDados = new BancoDeDados(
+              novaChave,
+              nomeDaChaveNoKVDB,
+              "angelocarlotto@gmail.com"
+            );
+            divStatus.innerHTML="nova chave obtida. inicializando dados.";
 
-        atualizarMapaDuranteAInicializacao();
+            await bancoDeDados.setDados({
+              marcadores: [],
+              circulos: [],
+              linhas: [],
+            });
+            divStatus.innerHTML="dados atualizado. pode utilizar a aplicação =]"
+            var newUrl = window.location.href.split('?id')[0] + "?id=" + novaChave;
+            window.history.pushState({ path: newUrl }, "", newUrl);
+            atualizarMapaDuranteAInicializacao();
+          });
+        });
       }
     </script>
   </body>
