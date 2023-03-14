@@ -57,7 +57,7 @@
         <li>Ultima Atualização: 09/03/2023 4</li>
       </ul>
     </div>
-    <div id="divStatus" style="font-size:26px;color: red;"></div>
+    <div id="divStatus" style="font-size: 26px; color: red"></div>
     <div id="mapid" class="map"></div>
 
     <script>
@@ -166,6 +166,12 @@
         async adicionarMarcadores(id, lat, lng) {
           var dados = await this.getDados();
           dados.marcadores.push({ id: id, lat: lat, lng: lng });
+          this.setDados(dados);
+        }
+
+        async updateActualBound(bound) {
+          var dados = await this.getDados();
+          dados.lastBound = bound;
           this.setDados(dados);
         }
 
@@ -424,6 +430,12 @@
         $(dados.circulos).each(function (i, e) {
           addCircle2(e);
         });
+
+        if (dados.lastBound)
+          map.flyToBounds([
+            dados.lastBound._northEast,
+            dados.lastBound._southWest,
+          ]);
 
         await bancoDeDados.setDados(dados);
       }
@@ -764,7 +776,6 @@
       var de, ate, rota;
       var markerUserCurrentLocation = null; // = L.marker([e.lat,e.len],{icon: greenIconYellow}).addTo(map);
       var watchId = null;
-
       var countMarcadoresSendoExcluido = 0;
       var c, l;
 
@@ -826,6 +837,10 @@
           bancoDeDados.adicionarLinha(l._leaflet_id, l._latlngs);
           l = null;
         }
+      });
+
+      map.on("moveend", async function () {
+        await bancoDeDados.updateActualBound(map.getBounds());
       });
 
       map.on("mousemove", function (e) {
@@ -909,22 +924,24 @@
           secretKVDB = params.get("id");
         }
       }
-      divStatus.innerHTML="carregando dados da API"
+      divStatus.innerHTML = "carregando dados da API";
       if (!secretKVDB) {
-        divStatus.innerHTML="criando nova chave da API"
+        divStatus.innerHTML = "criando nova chave da API";
         BancoDeDados.getNewKey(email).then(async (novaChave) => {
           bancoDeDados = new BancoDeDados(
             novaChave,
             nomeDaChaveNoKVDB,
             "angelocarlotto@gmail.com"
           );
-          divStatus.innerHTML="nova chave obtida. inicializando dados."
+          divStatus.innerHTML = "nova chave obtida. inicializando dados.";
           await bancoDeDados.setDados({
             marcadores: [],
             circulos: [],
             linhas: [],
+            lastBound: {},
           });
-          divStatus.innerHTML="dados atualizado. pode utilizar a aplicação =]"
+          divStatus.innerHTML =
+            "dados atualizado. pode utilizar a aplicação =]";
           var newUrl = window.location.href + "?id=" + novaChave;
           window.history.pushState({ path: newUrl }, "", newUrl);
           atualizarMapaDuranteAInicializacao();
@@ -932,28 +949,38 @@
       } else {
         console.log(8);
         bancoDeDados = new BancoDeDados(secretKVDB, nomeDaChaveNoKVDB, email);
-        divStatus.innerHTML="atualizando dados"
-        atualizarMapaDuranteAInicializacao().then(e=>divStatus.innerHTML="dados atualizado. pode utilizar a aplicação =]").catch((e) => {
-          divStatus.innerHTML="ocorreu um erro com a chave informada. :( buscando nova chave";
-          BancoDeDados.getNewKey(email).then(async (novaChave) => {
-            bancoDeDados = new BancoDeDados(
-              novaChave,
-              nomeDaChaveNoKVDB,
-              "angelocarlotto@gmail.com"
-            );
-            divStatus.innerHTML="nova chave obtida. inicializando dados.";
+        divStatus.innerHTML = "atualizando dados";
+        atualizarMapaDuranteAInicializacao()
+          .then(
+            (e) =>
+              (divStatus.innerHTML =
+                "dados atualizado. pode utilizar a aplicação =]")
+          )
+          .catch((e) => {
+            divStatus.innerHTML =
+              "ocorreu um erro com a chave informada. :( buscando nova chave";
+            BancoDeDados.getNewKey(email).then(async (novaChave) => {
+              bancoDeDados = new BancoDeDados(
+                novaChave,
+                nomeDaChaveNoKVDB,
+                "angelocarlotto@gmail.com"
+              );
+              divStatus.innerHTML = "nova chave obtida. inicializando dados.";
 
-            await bancoDeDados.setDados({
-              marcadores: [],
-              circulos: [],
-              linhas: [],
+              await bancoDeDados.setDados({
+                marcadores: [],
+                circulos: [],
+                linhas: [],
+                lastBound: {},
+              });
+              divStatus.innerHTML =
+                "dados atualizado. pode utilizar a aplicação =]";
+              var newUrl =
+                window.location.href.split("?id")[0] + "?id=" + novaChave;
+              window.history.pushState({ path: newUrl }, "", newUrl);
+              atualizarMapaDuranteAInicializacao();
             });
-            divStatus.innerHTML="dados atualizado. pode utilizar a aplicação =]"
-            var newUrl = window.location.href.split('?id')[0] + "?id=" + novaChave;
-            window.history.pushState({ path: newUrl }, "", newUrl);
-            atualizarMapaDuranteAInicializacao();
           });
-        });
       }
     </script>
   </body>
