@@ -8,6 +8,18 @@
         width: 100%;
         height: 100%;
       }
+
+      .btnExcluirMarcador {
+        background: none !important;
+        border: none;
+        padding: 0 !important;
+        /*optional*/
+        font-family: arial, sans-serif;
+        /*input has OS specific font-family*/
+        color: #069;
+        text-decoration: underline;
+        cursor: pointer;
+      }
     </style>
 
     <link
@@ -383,9 +395,19 @@
             var marker = L.marker([e.latlng.lat, e.latlng.lng], {
               icon: greenIconInseridoENaoSalvo,
             }).addTo(map);
-            var POPUP = marker.bindPopup("");
-            marker.on("popupopen", onPopupOpen);
             e.latlng.id = marker._leaflet_id;
+            //var POPUP = marker.bindPopup("");
+            var POPUP = marker.bindPopup(
+              "<button class='btnExcluirMarcador' data-id='" +
+                e.latlng.id +
+                "'>Delete |</button>" +
+                "<br>" +
+                "<label>Color</label><select class='optionsColorMarker'  data-id='" +
+                e.id +
+                "'><option>Red</option><option>Blue</option><option>green</option><option>yellow</option></select>"
+            );
+            //marker.on("popupopen", onPopupOpen);
+
             bancoDeDados
               .adicionarMarcadores(e.latlng.id, e.latlng.lat, e.latlng.lng)
               .then((dado) => {
@@ -411,7 +433,21 @@
         }
       }
 
+      function onPopupOpen2(id) {
+        if (countMarcadoresSendoExcluido == 0) {
+          countMarcadoresSendoExcluido++;
+          map._layers[id].setIcon(greenIconSendoExcluido);
+          //tem que melhorar a logica de identificar qual item do arrayq ue est no banco de dados deve ser excluido, ta zuado
+          bancoDeDados.removerMarcador(id).then((dado) => {
+            map.removeLayer(map._layers[id]);
+            countMarcadoresSendoExcluido--;
+          });
+        } else {
+        }
+      }
+
       async function atualizarMapaDuranteAInicializacao() {
+        console.log("oi3");
         let dados = await bancoDeDados.getDados();
 
         $(dados.marcadores).each(function (i, e) {
@@ -419,8 +455,16 @@
             icon: greenIconRecuperado,
           }).addTo(map);
           e.id = marker._leaflet_id;
-          var POPUP = marker.bindPopup("");
-          marker.on("popupopen", onPopupOpen);
+          var POPUP = marker.bindPopup(
+            "<button class='btnExcluirMarcador' data-id='" +
+              e.id +
+              "'>Delete |</button>" +
+              "<br>" +
+              "<label>Color</label><select class='optionsColorMarker'  data-id='" +
+              e.id +
+              "'><option>Red</option><option>Blue</option><option>green</option><option>yellow</option></select>"
+          );
+          //marker.on("popupopen", onPopupOpen);
         });
 
         $(dados.linhas).each(function (i, e) {
@@ -431,14 +475,18 @@
           addCircle2(e);
         });
 
-        if (dados.lastBound)
-          map.flyToBounds([
-            dados.lastBound._northEast,
-            dados.lastBound._southWest,
-          ]);
-
         await bancoDeDados.setDados(dados);
+
+        return dados;
       }
+
+      $("body").on("click", ".btnExcluirMarcador", function (e) {
+        onPopupOpen2(e.target.dataset.id);
+      });
+
+      $("body").on("click", ".optionsColorMarker", function (e) {
+        console.log(e);
+      });
 
       function ondeTemTriumph() {
         JSON.parse(
@@ -779,89 +827,6 @@
       var countMarcadoresSendoExcluido = 0;
       var c, l;
 
-      var map = L.map("mapid", {
-        contextmenu: true,
-        //contextmenuWidth: 140,
-        contextmenuItems: [
-          {
-            text: "Draw circle (start here)",
-            callback: addCircle,
-          },
-          {
-            text: "Draw line (start here)",
-            callback: addLine,
-          },
-          //, '-'
-          { separator: true },
-          {
-            text: "Add marker here",
-            callback: addMarcador,
-          },
-          {
-            text: "What coordinate is here?",
-            callback: showCoordinates,
-          },
-          {
-            text: "Show me all Triumph?",
-            callback: ondeTemTriumph,
-          },
-          { separator: true },
-          {
-            text: "1-From",
-            callback: tragetoriaDe,
-          },
-          {
-            text: "2-To",
-            callback: tragetoriaAte,
-          },
-          {
-            text: "N-Add to the Route end",
-            callback: adicionarAoFim,
-          },
-        ],
-      }).setView([-15.628326978852627, -56.14013671875001], 8);
-
-      map.on("click", function (e) {
-        if (c) {
-          console.log("circulo adicionado", c, l);
-          bancoDeDados.adicionarCirculo(
-            c._leaflet_id,
-            c._latlng,
-            c._mRadius,
-            l._latlngs
-          );
-          c = null;
-          l = null;
-        } else if (l) {
-          console.log("linha adicionado", l);
-          bancoDeDados.adicionarLinha(l._leaflet_id, l._latlngs);
-          l = null;
-        }
-      });
-
-      map.on("moveend", async function () {
-        await bancoDeDados.updateActualBound(map.getBounds());
-      });
-
-      map.on("mousemove", function (e) {
-        if (c) {
-          var distance = map.distance(c.getLatLng(), e.latlng);
-          c.setRadius(distance);
-          l.setLatLngs([c.getLatLng(), e.latlng]);
-          l.setText("");
-          l.setText(new String((distance / 1000).toFixed(4)) + " Km", {
-            center: true,
-          });
-        } else if (l) {
-          var distance = map.distance(l.getLatLngs()[0], e.latlng);
-          l.setLatLngs([l.getLatLngs()[0], e.latlng]);
-          l.setText("");
-          l.setText(new String((distance / 1000).toFixed(4)) + " Km", {
-            center: true,
-          });
-        }
-      });
-
       // check for Geolocation support
       if (navigator.geolocation) {
         //alert('Geolocation is supported!');
@@ -893,29 +858,115 @@
             position.coords.longitude,
           ]);
         });
+
+        var map = L.map("mapid", {
+          contextmenu: true,
+          //contextmenuWidth: 140,
+          contextmenuItems: [
+            {
+              text: "Draw circle (start here)",
+              callback: addCircle,
+            },
+            {
+              text: "Draw line (start here)",
+              callback: addLine,
+            },
+            //, '-'
+            { separator: true },
+            {
+              text: "Add marker here",
+              callback: addMarcador,
+            },
+            {
+              text: "What coordinate is here?",
+              callback: showCoordinates,
+            },
+            {
+              text: "Show me all Triumph?",
+              callback: ondeTemTriumph,
+            },
+            { separator: true },
+            {
+              text: "1-From",
+              callback: tragetoriaDe,
+            },
+            {
+              text: "2-To",
+              callback: tragetoriaAte,
+            },
+            {
+              text: "N-Add to the Route end",
+              callback: adicionarAoFim,
+            },
+          ],
+        }).setView([0, 0], 5); //.setView([-15.628326978852627, -56.14013671875001], 8);
+
+        map.on("click", function (e) {
+          if (c) {
+            console.log("circulo adicionado", c, l);
+            bancoDeDados.adicionarCirculo(
+              c._leaflet_id,
+              c._latlng,
+              c._mRadius,
+              l._latlngs
+            );
+            c = null;
+            l = null;
+          } else if (l) {
+            console.log("linha adicionado", l);
+            bancoDeDados.adicionarLinha(l._leaflet_id, l._latlngs);
+            l = null;
+          }
+        });
+
+        map.on("moveend", async function () {
+          console.log(bancoDeDados);
+          if (bancoDeDados != null) {
+            await bancoDeDados.updateActualBound(map.getBounds());
+          }
+        });
+
+        map.on("mousemove", function (e) {
+          if (c) {
+            var distance = map.distance(c.getLatLng(), e.latlng);
+            c.setRadius(distance);
+            l.setLatLngs([c.getLatLng(), e.latlng]);
+            l.setText("");
+            l.setText(new String((distance / 1000).toFixed(4)) + " Km", {
+              center: true,
+            });
+          } else if (l) {
+            var distance = map.distance(l.getLatLngs()[0], e.latlng);
+            l.setLatLngs([l.getLatLngs()[0], e.latlng]);
+            l.setText("");
+            l.setText(new String((distance / 1000).toFixed(4)) + " Km", {
+              center: true,
+            });
+          }
+        });
+
+        L.tileLayer(
+          "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}",
+          {
+            attribution:
+              'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+            maxZoom: 18,
+            id: "mapbox/streets-v11",
+            tileSize: 512,
+            zoomOffset: -1,
+            accessToken:
+              "pk.eyJ1IjoiYW5nZWxvY2FybG90dG8iLCJhIjoiY2t0azFnNHhyMWhnZTJ1cGlwOTk3amk3dyJ9.aebSrJgQ1QtBtnmMml2dHg",
+          }
+        ).addTo(map);
       } else {
         alert("Geolocation is not supported for this Browser/OS.");
       }
-
-      L.tileLayer(
-        "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}",
-        {
-          attribution:
-            'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-          maxZoom: 18,
-          id: "mapbox/streets-v11",
-          tileSize: 512,
-          zoomOffset: -1,
-          accessToken:
-            "pk.eyJ1IjoiYW5nZWxvY2FybG90dG8iLCJhIjoiY2t0azFnNHhyMWhnZTJ1cGlwOTk3amk3dyJ9.aebSrJgQ1QtBtnmMml2dHg",
-        }
-      ).addTo(map);
     </script>
 
     <script>
       var nomeDaChaveNoKVDB = "listaComLocalizacoes";
       let email = "angelocarlotto@gmail.com";
-      let bancoDeDados = new BancoDeDados();
+      let bancoDeDados = null;
       var secretKVDB = null;
       var queryString = window.location.search;
       if (queryString) {
@@ -926,59 +977,75 @@
       }
       divStatus.innerHTML = "carregando dados da API";
       if (!secretKVDB) {
-        divStatus.innerHTML = "criando nova chave da API";
+        divStatus.innerHTML += "<br><br>criando nova chave da API";
         BancoDeDados.getNewKey(email).then(async (novaChave) => {
           bancoDeDados = new BancoDeDados(
             novaChave,
             nomeDaChaveNoKVDB,
             "angelocarlotto@gmail.com"
           );
-          divStatus.innerHTML = "nova chave obtida. inicializando dados.";
+          divStatus.innerHTML +=
+            "<br><br>nova chave obtida. inicializando dados.";
           await bancoDeDados.setDados({
             marcadores: [],
             circulos: [],
             linhas: [],
-            lastBound: {},
+            lastBound: null,
           });
-          divStatus.innerHTML =
-            "dados atualizado. pode utilizar a aplicação =]";
+          divStatus.innerHTML +=
+            "<br><br>dados atualizado. pode utilizar a aplicação =]";
           var newUrl = window.location.href + "?id=" + novaChave;
           window.history.pushState({ path: newUrl }, "", newUrl);
-          atualizarMapaDuranteAInicializacao();
+          console.log("oi4");
+          atualizarMapaDuranteAInicializacao().then((dados) => {
+            map.fitWorld();
+          });
         });
       } else {
         console.log(8);
         bancoDeDados = new BancoDeDados(secretKVDB, nomeDaChaveNoKVDB, email);
-        divStatus.innerHTML = "atualizando dados";
+        divStatus.innerHTML += "<br><br>atualizando dados";
         atualizarMapaDuranteAInicializacao()
-          .then(
-            (e) =>
-              (divStatus.innerHTML =
-                "dados atualizado. pode utilizar a aplicação =]")
-          )
+          .then((dados) => {
+            divStatus.innerHTML +=
+              "<br><br>dados atualizado. pode utilizar a aplicação =]1";
+
+            if (dados.lastBound) {
+              map.flyToBounds([
+                dados.lastBound._northEast,
+                dados.lastBound._southWest,
+              ]);
+            } else {
+              map.fitWorld();
+            }
+          })
           .catch((e) => {
-            divStatus.innerHTML =
-              "ocorreu um erro com a chave informada. :( buscando nova chave";
+            divStatus.innerHTML +=
+              "<br><br>ocorreu um erro com a chave informada. :( buscando nova chave" +
+              e;
             BancoDeDados.getNewKey(email).then(async (novaChave) => {
               bancoDeDados = new BancoDeDados(
                 novaChave,
                 nomeDaChaveNoKVDB,
                 "angelocarlotto@gmail.com"
               );
-              divStatus.innerHTML = "nova chave obtida. inicializando dados.";
+              divStatus.innerHTML +=
+                "<br><br>nova chave obtida. inicializando dados.";
 
               await bancoDeDados.setDados({
                 marcadores: [],
                 circulos: [],
                 linhas: [],
-                lastBound: {},
+                lastBound: null,
               });
-              divStatus.innerHTML =
-                "dados atualizado. pode utilizar a aplicação =]";
+              divStatus.innerHTML +=
+                "<br><br>dados atualizado. pode utilizar a aplicação =]";
               var newUrl =
                 window.location.href.split("?id")[0] + "?id=" + novaChave;
               window.history.pushState({ path: newUrl }, "", newUrl);
-              atualizarMapaDuranteAInicializacao();
+              atualizarMapaDuranteAInicializacao().then((dados) => {
+                map.fitWorld();
+              });
             });
           });
       }
