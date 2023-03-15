@@ -172,19 +172,26 @@
             raio: raio,
             linha: latLngLinha,
           });
-          this.setDados(dados);
+          await this.setDados(dados);
         }
 
         async adicionarMarcadores(id, lat, lng) {
           var dados = await this.getDados();
-          dados.marcadores.push({ id: id, lat: lat, lng: lng });
-          this.setDados(dados);
+          dados.marcadores.push({ id: id, lat: lat, lng: lng, cor: "blue" });
+          await this.setDados(dados);
+        }
+
+        async atualizarCorMarcador(id, cor) {
+          var dados = await this.getDados();
+          let marcadorTrocarCor = dados.marcadores.find((e) => e.id == id);
+          marcadorTrocarCor.cor = cor;
+          await this.setDados(dados);
         }
 
         async updateActualBound(bound) {
           var dados = await this.getDados();
           dados.lastBound = bound;
-          this.setDados(dados);
+          await this.setDados(dados);
         }
 
         async removerMarcador(id) {
@@ -193,7 +200,7 @@
             return e.id != id;
           });
 
-          this.setDados(dados);
+          await this.setDados(dados);
         }
         async removerCirculo(id) {
           var dados = await this.getDados();
@@ -210,7 +217,7 @@
             return e.id != id;
           });
 
-          this.setDados(dados);
+          await this.setDados(dados);
         }
 
         async adicionarLinha(id, latLngs) {
@@ -403,8 +410,8 @@
                 "'>Delete |</button>" +
                 "<br>" +
                 "<label>Color</label><select class='optionsColorMarker'  data-id='" +
-                e.id +
-                "'><option>Red</option><option>Blue</option><option>green</option><option>yellow</option></select>"
+                e.latlng.id +
+                "'><option></option><option>gray</option><option>red</option><option>blue</option><option>green</option><option>yellow</option></select>"
             );
             //marker.on("popupopen", onPopupOpen);
 
@@ -452,7 +459,7 @@
 
         $(dados.marcadores).each(function (i, e) {
           var marker = L.marker([e.lat, e.lng], {
-            icon: greenIconRecuperado,
+            icon: getIconColor(e.cor),
           }).addTo(map);
           e.id = marker._leaflet_id;
           var POPUP = marker.bindPopup(
@@ -462,7 +469,7 @@
               "<br>" +
               "<label>Color</label><select class='optionsColorMarker'  data-id='" +
               e.id +
-              "'><option>Red</option><option>Blue</option><option>green</option><option>yellow</option></select>"
+              "'><option></option><option>gray</option><option>red</option><option>blue</option><option>green</option><option>yellow</option></select>"
           );
           //marker.on("popupopen", onPopupOpen);
         });
@@ -484,9 +491,42 @@
         onPopupOpen2(e.target.dataset.id);
       });
 
-      $("body").on("click", ".optionsColorMarker", function (e) {
-        console.log(e);
+      $("body").on("change", ".optionsColorMarker", async function (e) {
+        let novaCor = getIconColor(e.target.value);
+
+        let idMarcador = e.target.dataset.id;
+
+        map._layers[idMarcador].setIcon(novaCor);
+        await bancoDeDados.atualizarCorMarcador(idMarcador, e.target.value);
       });
+
+      function getIconColor(novaCor) {
+        switch (novaCor) {
+          case "red": {
+            return greenIconInseridoENaoSalvo;
+
+            break;
+          }
+          case "blue": {
+            return greenIconRecuperado;
+            break;
+          }
+          case "green": {
+            return greenIconInseridoESalvo;
+            break;
+          }
+          case "yellow": {
+            return greenIconYellow;
+            break;
+          }
+          case "gray": {
+            return greenIconSendoExcluido;
+            break;
+          }
+          default:
+            return greenIconRecuperado;
+        }
+      }
 
       function ondeTemTriumph() {
         JSON.parse(
@@ -1009,7 +1049,7 @@
         atualizarMapaDuranteAInicializacao()
           .then((dados) => {
             divStatus.innerHTML +=
-              "<br><br>dados atualizado. pode utilizar a aplicação =]1";
+              "<br><br>dados atualizado. pode utilizar a aplicação =]";
 
             if (dados.lastBound) {
               map.flyToBounds([
