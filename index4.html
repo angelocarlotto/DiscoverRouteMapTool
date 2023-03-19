@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Contagem de Palavras</title>
+    <meta charset="utf-8" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap-grid.min.css"
+      integrity="sha512-JQksK36WdRekVrvdxNyV3B0Q1huqbTkIQNbz1dlcFVgNynEMRl0F8OSqOGdVppLUDIvsOejhr/W5L3G/b3J+8w=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.min.js"
+      integrity="sha512-1/RvZTcCDEUjY/CypiMz+iqqtaoQfAITmNSJY17Myp4Ms5mdxPS5UV7iOfdZoxcGhzFbOm6sntTKJppjvuhg4g=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+  </head>
+  <body>
+    <h1>Contagem de Palavras</h1>
+    <form>
+      <label for="fileInput">Selecione um arquivo .str:</label>
+      <input type="file" id="fileInput" />
+      <br />
+      <button type="button" id="processButton">Processar</button>
+    </form>
+    <br />
+    <h2>Resultados:</h2>
+    <div class="container">
+      <table id="resultsTable" class="table table-striped">
+        <thead>
+          <tr>
+            <th scope="col">Palavra</th>
+            <th scope="col">Quantidade</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <script>
+      const MAX_PARTS = 10;
+
+      function readFileAsync(file) {
+        return new Promise((resolve, reject) => {
+          let reader = new FileReader();
+          reader.onload = () => {
+            resolve(reader.result);
+          };
+          reader.onerror = reject;
+          reader.readAsText(file);
+        });
+      }
+
+      function obterPalavrasDistintas(texto) {
+        // Transforma todas as letras em minúsculas e remove todos os caracteres que não são letras ou espaços
+        const textoProcessado = texto.toLowerCase().replace(/[^a-z\s]/g, "");
+        // Divide o texto processado em uma lista de palavras
+        const palavras = textoProcessado.split(/\s+/);
+        const frequencias = new Map();
+        palavras.forEach((palavra) => {
+          const frequencia = frequencias.get(palavra) || 0;
+          frequencias.set(palavra, frequencia + 1);
+        });
+        return frequencias;
+      }
+
+      async function processarArquivo(file) {
+        const fileContent = await readFileAsync(file);
+        const partes = dividirTexto(fileContent, MAX_PARTS);
+        for (let i = 0; i < partes.length; i++) {
+          const frequencias = obterPalavrasDistintas(partes[i]);
+          mostrarResultados(frequencias);
+        }
+      }
+
+      function dividirTexto(texto, numPartes) {
+        const tamanhoParte = Math.ceil(texto.length / numPartes);
+        const partes = [];
+        for (let i = 0; i < numPartes; i++) {
+          const inicio = i * tamanhoParte;
+          const parte = texto.substring(inicio, inicio + tamanhoParte);
+          partes.push(parte);
+        }
+        return partes;
+      }
+
+      function mostrarResultados(frequencias) {
+        const tableBody = document.querySelector("#resultsTable tbody");
+        frequencias.forEach((quantidade, palavra) => {
+          let row = tableBody.querySelector(`tr[data-palavra="${palavra}"]`);
+          if (!row) {
+            row = document.createElement("tr");
+            row.setAttribute("data-palavra", palavra);
+            
+            const palavraCell = document.createElement("td");
+            palavraCell.textContent = palavra;
+            row.appendChild(palavraCell);
+            const quantidadeCell = document.createElement("td");
+            quantidadeCell.setAttribute("data-quantidade", "0");
+            row.appendChild(quantidadeCell);
+            tableBody.appendChild(row);
+          }
+          const quantidadeCell = row.querySelector("[data-quantidade]");
+          quantidadeCell.textContent =
+            parseInt(
+              quantidadeCell.textContent == "" ? 0 : quantidadeCell.textContent
+            ) + quantidade;
+        });
+      }
+
+      document.querySelector("#processButton").addEventListener("click", () => {
+        const fileInput = document.querySelector("#fileInput");
+        if (!fileInput.value) {
+          alert("Selecione um arquivo .str para processar.");
+          return;
+        }
+        const file = fileInput.files[0];
+        processarArquivo(file);
+      });
+    </script>
+  </body>
+</html>
