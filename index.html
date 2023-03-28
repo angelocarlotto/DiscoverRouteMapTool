@@ -956,10 +956,19 @@
                 position.coords.longitude
               } <br> precisão: ${position.coords.accuracy.toFixed(2)} metros`;
 
+              const radius = position.coords.accuracy;
+              let posicaoAtual = new L.LatLng(
+                position.coords.latitude,
+                position.coords.longitude
+              );
+              currentPositionAccuracyCenter.setLatLng(posicaoAtual);
+              currentPositionAccuracy.setLatLng(posicaoAtual);
+              currentPositionAccuracy.setRadius(radius);
+
               reset();
               start();
 
-              if($("#chkLiveTrack")[0].checked){
+              if ($("#chkLiveTrack")[0].checked) {
                 panTo();
               }
             })
@@ -1020,25 +1029,10 @@
         );
         currentPositionAccuracy = L.circle([0, 0], { radius: 0 }).addTo(map);
 
-        // Atualizar a posição do marker de posição atual quando a posição do usuário mudar
-        function onLocationFound(e) {
-          const radius = e.accuracy;
-          currentPositionAccuracyCenter.setLatLng(e.latlng);
-          currentPositionAccuracy.setLatLng(e.latlng);
-          currentPositionAccuracy.setRadius(radius);
-        }
         function panTo() {
           map.panTo(currentPositionAccuracyCenter._latlng);
         }
-        // Se houver um erro ao tentar encontrar a localização do usuário, exibir uma mensagem de erro
-        function onLocationError(e) {
-          alert(e.message);
-        }
 
-        // Pedir permissão para acessar a localização do usuário e, em seguida, mostrar sua posição atual no mapa
-        map.on("locationfound", onLocationFound);
-        map.on("locationerror", onLocationError);
-        map.locate({ setView: true, maxZoom: 16 });
 
         map.on("click", function (e) {
           if (c) {
