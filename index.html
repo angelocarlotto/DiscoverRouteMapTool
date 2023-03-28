@@ -70,6 +70,7 @@
       </ul>
     </div>
     <div id="divStatus" style="font-size: 26px; color: red"></div>
+    <div id="divCurrentLocation"  style="font-size: 16px; color: green"></div>
     <div id="mapid" class="map"></div>
 
     <script>
@@ -869,36 +870,9 @@
 
       // check for Geolocation support
       if (navigator.geolocation) {
-        //alert('Geolocation is supported!');
-
-        /*window.onload = function () {
-          var startPos;
-          var geoSuccess = function (position) {
-            startPos = position;
-            map.setView(
-              [startPos.coords.latitude, startPos.coords.longitude],
-              10
-            );
-            map.contextmenu.showAt([
-              startPos.coords.latitude,
-              startPos.coords.longitude,
-            ]);
-          };
-          navigator.geolocation.getCurrentPosition(geoSuccess);
-        };
-
-        watchId = navigator.geolocation.watchPosition(function (position) {
-          markerUserCurrentLocation = markerUserCurrentLocation
-            ? markerUserCurrentLocation
-            : L.marker([position.coords.latitude, position.coords.longitude], {
-                icon: greenIconYellow,
-              }).addTo(map);
-          markerUserCurrentLocation.setLatLng([
-            position.coords.latitude,
-            position.coords.longitude,
-          ]);
+        navigator.geolocation.watchPosition(function (position) {
+          divCurrentLocation.innerHTML=`localização atual >> latitude:${position.coords.latitude} longitude:${position.coords.longitude} ${position.coords.accuracy} metros`;
         });
-        */
 
         var map = L.map("mapid", {
           contextmenu: true,
@@ -938,9 +912,13 @@
             {
               text: "N-Add to the Route end",
               callback: adicionarAoFim,
-            },{
+            },
+            {
               text: "Show My Location",
-              callback: function(){},
+              callback: function () {
+
+
+              },
             },
           ],
         }).setView([0, 0], 5); //.setView([-15.628326978852627, -56.14013671875001], 8);
@@ -1020,6 +998,7 @@
         }
       }
       divStatus.innerHTML = "carregando dados da API";
+      //caso a hashBucket nao tenha sido informado no URL
       if (!secretKVDB) {
         divStatus.innerHTML += "<br><br>criando nova chave da API";
         BancoDeDados.getNewKey(email).then(async (novaChave) => {
