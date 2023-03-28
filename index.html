@@ -877,7 +877,29 @@
       // check for Geolocation support
       if (navigator.geolocation) {
         navigator.geolocation.watchPosition(function (position) {
-          divCurrentLocation.innerHTML = `localização atual >> latitude:${position.coords.latitude} longitude:${position.coords.longitude} ${position.coords.accuracy} metros`;
+
+          const latitude = position.coords.latitude;
+          const longitude = position.coords.longitude;
+
+          // Chave de API do OpenCage Geocoder
+          const apiKey = "84eaf0ee63644a0c96d658f04121c061";
+
+          // URL da API OpenCage Geocoder
+          const apiUrl = `https://api.opencagedata.com/geocode/v1/json?key=${apiKey}&q=${latitude}+${longitude}&pretty=1&no_annotations=1`;
+
+          fetch(apiUrl)
+            .then((response) => response.json())
+            .then((data) => {
+              // Extrair o nome da cidade a partir do objeto de resposta JSON
+              const cityName = data.results[0].components.city;
+              console.log(`O nome da cidade é ${cityName}.`);
+
+          divCurrentLocation.innerHTML = `localização atual >>Cidade: ${cityName} latitude:${position.coords.latitude} longitude:${position.coords.longitude} ${position.coords.accuracy} metros`;
+
+            })
+            .catch((error) => {
+              console.log(`Ocorreu um erro: ${error}`);
+            });
         });
 
         var map = L.map("mapid", {
@@ -986,15 +1008,6 @@
       } else {
         alert("Geolocation is not supported for this Browser/OS.");
       }
-
-      const latitude = -22.906847;
-      const longitude = -43.172897;
-
-      // Chave de API do OpenCage Geocoder
-      const apiKey = "84eaf0ee63644a0c96d658f04121c061";
-
-      // URL da API OpenCage Geocoder
-      const apiUrl = `https://api.opencagedata.com/geocode/v1/json?key=${apiKey}&q=${latitude}+${longitude}&pretty=1&no_annotations=1`;
     </script>
 
     <script>
