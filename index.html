@@ -877,7 +877,6 @@
       // check for Geolocation support
       if (navigator.geolocation) {
         navigator.geolocation.watchPosition(function (position) {
-
           const latitude = position.coords.latitude;
           const longitude = position.coords.longitude;
 
@@ -892,10 +891,10 @@
             .then((data) => {
               // Extrair o nome da cidade a partir do objeto de resposta JSON
               const cityName = data.results[0].components.city;
+              const endereco=data.results[0].formatted;
               console.log(`O nome da cidade é ${cityName}.`);
 
-          divCurrentLocation.innerHTML = `localização atual >>Cidade: ${cityName} latitude:${position.coords.latitude} longitude:${position.coords.longitude} ${position.coords.accuracy} metros`;
-
+              divCurrentLocation.innerHTML = `localização atual >>Cidade: ${cityName} ${endereco} <br> latitude:${position.coords.latitude} longitude:${position.coords.longitude} <br> precisão: ${position.coords.accuracy} metros`;
             })
             .catch((error) => {
               console.log(`Ocorreu um erro: ${error}`);
