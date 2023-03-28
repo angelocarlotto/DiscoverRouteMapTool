@@ -146,7 +146,8 @@
           bancoDeDados = new BancoDeDados(
             newHashBucket,
             keyInTheHashBcuket,
-            email
+            email,
+            new Array()
           );
           await bancoDeDados.init();
           divStatus.innerHTML +=
@@ -162,7 +163,8 @@
           bancoDeDados = new BancoDeDados(
             secretKVDB,
             keyInTheHashBcuket,
-            email
+            email,
+            new Array()
           );
           divStatus.innerHTML +=
             "<br><br>dados atualizado. pode utilizar a aplicação =]";

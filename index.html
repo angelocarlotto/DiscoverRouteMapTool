@@ -37,6 +37,10 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-contextmenu/1.4.0/leaflet.contextmenu.css"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@opencage/leaflet-opencage-geosearch/leaflet-opencage-geosearch.css"
+    />
 
     <script
       src="https://code.jquery.com/jquery-3.4.1.js"
@@ -53,6 +57,8 @@
     <script src="https://cdn.jsdelivr.net/npm/leaflet-textpath@1.2.0/leaflet.textpath.min.js"></script>
     <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-contextmenu/1.4.0/leaflet.contextmenu.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@opencage/geosearch-bundle"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@opencage/leaflet-opencage-geosearch"></script>
   </head>
   <body>
     <div>
@@ -70,7 +76,7 @@
       </ul>
     </div>
     <div id="divStatus" style="font-size: 26px; color: red"></div>
-    <div id="divCurrentLocation"  style="font-size: 16px; color: green"></div>
+    <div id="divCurrentLocation" style="font-size: 16px; color: green"></div>
     <div id="mapid" class="map"></div>
 
     <script>
@@ -871,7 +877,7 @@
       // check for Geolocation support
       if (navigator.geolocation) {
         navigator.geolocation.watchPosition(function (position) {
-          divCurrentLocation.innerHTML=`localização atual >> latitude:${position.coords.latitude} longitude:${position.coords.longitude} ${position.coords.accuracy} metros`;
+          divCurrentLocation.innerHTML = `localização atual >> latitude:${position.coords.latitude} longitude:${position.coords.longitude} ${position.coords.accuracy} metros`;
         });
 
         var map = L.map("mapid", {
@@ -915,10 +921,7 @@
             },
             {
               text: "Show My Location",
-              callback: function () {
-
-
-              },
+              callback: function () {},
             },
           ],
         }).setView([0, 0], 5); //.setView([-15.628326978852627, -56.14013671875001], 8);
@@ -983,6 +986,15 @@
       } else {
         alert("Geolocation is not supported for this Browser/OS.");
       }
+
+      const latitude = -22.906847;
+      const longitude = -43.172897;
+
+      // Chave de API do OpenCage Geocoder
+      const apiKey = "84eaf0ee63644a0c96d658f04121c061";
+
+      // URL da API OpenCage Geocoder
+      const apiUrl = `https://api.opencagedata.com/geocode/v1/json?key=${apiKey}&q=${latitude}+${longitude}&pretty=1&no_annotations=1`;
     </script>
 
     <script>
