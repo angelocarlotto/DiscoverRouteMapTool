@@ -72,11 +72,18 @@
           caso esteja acessando a pagina pelo computador , clique com botão
           direito para opções
         </li>
-        <li>Ultima Atualização: 13/03/2023 1</li>
+        <li>Ultima Atualização: 28/03/2023</li>
       </ul>
     </div>
     <div id="divStatus" style="font-size: 26px; color: red"></div>
     <div id="divCurrentLocation" style="font-size: 16px; color: green"></div>
+    <div id="divLastUpdateSince"></div>
+    <div>
+      <button onClick="panTo()">Go to my locattion</button
+      ><label>
+        Live track me <input id="chkLiveTrack" type="checkbox" />
+      </label>
+    </div>
     <div id="mapid" class="map"></div>
 
     <script>
@@ -461,7 +468,6 @@
       }
 
       async function atualizarMapaDuranteAInicializacao() {
-        console.log("oi3");
         let dados = await bancoDeDados.getDados();
 
         $(dados.marcadores).each(function (i, e) {
@@ -497,7 +503,9 @@
       $("body").on("click", ".btnExcluirMarcador", function (e) {
         onPopupOpen2(e.target.dataset.id);
       });
-
+      $("#chkLiveTrack").change(function (a, b, c) {
+        console.log(this.checked);
+      });
       $("body").on("change", ".optionsColorMarker", async function (e) {
         let novaCor = getIconColor(e.target.value);
 
@@ -506,6 +514,52 @@
         map._layers[idMarcador].setIcon(novaCor);
         await bancoDeDados.atualizarCorMarcador(idMarcador, e.target.value);
       });
+      let milliseconds = 0;
+      let seconds = 0;
+      let minutes = 0;
+      let hours = 0;
+      let timer;
+
+      function displayTimer() {
+        const timerElement = document.getElementById("divLastUpdateSince");
+        timerElement.textContent = `tempo desde última atualização: ${hours
+          .toString()
+          .padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds
+          .toString()
+          .padStart(2, "0")}:${milliseconds.toString().padStart(3, "0")}`;
+      }
+
+      function start() {
+        timer = setInterval(() => {
+          milliseconds++;
+          if (milliseconds === 1000) {
+            milliseconds = 0;
+            seconds++;
+          }
+          if (seconds === 60) {
+            seconds = 0;
+            minutes++;
+          }
+          if (minutes === 60) {
+            minutes = 0;
+            hours++;
+          }
+          displayTimer();
+        }, 1);
+      }
+
+      function stop() {
+        clearInterval(timer);
+      }
+
+      function reset() {
+        clearInterval(timer);
+        milliseconds = 0;
+        seconds = 0;
+        minutes = 0;
+        hours = 0;
+        displayTimer();
+      }
 
       function getIconColor(novaCor) {
         switch (novaCor) {
@@ -873,7 +927,9 @@
       var watchId = null;
       var countMarcadoresSendoExcluido = 0;
       var c, l;
-
+      //const currentPositionMarker = L.marker([0, 0]).addTo(map);
+      let currentPositionAccuracyCenter;
+      let currentPositionAccuracy;
       // check for Geolocation support
       if (navigator.geolocation) {
         navigator.geolocation.watchPosition(function (position) {
@@ -885,16 +941,27 @@
 
           // URL da API OpenCage Geocoder
           const apiUrl = `https://api.opencagedata.com/geocode/v1/json?key=${apiKey}&q=${latitude}+${longitude}&pretty=1&no_annotations=1`;
-
+          displayTimer();
+          start();
           fetch(apiUrl)
             .then((response) => response.json())
             .then((data) => {
               // Extrair o nome da cidade a partir do objeto de resposta JSON
               const cityName = data.results[0].components.city;
-              const endereco=data.results[0].formatted;
-              console.log(`O nome da cidade é ${cityName}.`);
+              const endereco = data.results[0].formatted;
 
-              divCurrentLocation.innerHTML = `localização atual >>Cidade: ${cityName} ${endereco} <br> latitude:${position.coords.latitude} longitude:${position.coords.longitude} <br> precisão: ${position.coords.accuracy} metros`;
+              divCurrentLocation.innerHTML = `localização atual >>Cidade: ${cityName} <br> endereco: ${endereco} <br> latitude:${
+                position.coords.latitude
+              } longitude:${
+                position.coords.longitude
+              } <br> precisão: ${position.coords.accuracy.toFixed(2)} metros`;
+
+              reset();
+              start();
+
+              if($("#chkLiveTrack")[0].checked){
+                panTo();
+              }
             })
             .catch((error) => {
               console.log(`Ocorreu um erro: ${error}`);
@@ -942,10 +1009,36 @@
             },
             {
               text: "Show My Location",
-              callback: function () {},
+              callback: panTo,
             },
           ],
         }).setView([0, 0], 5); //.setView([-15.628326978852627, -56.14013671875001], 8);
+
+        //const currentPositionMarker = L.marker([0, 0]).addTo(map);
+        currentPositionAccuracyCenter = L.circle([0, 0], { radius: 1 }).addTo(
+          map
+        );
+        currentPositionAccuracy = L.circle([0, 0], { radius: 0 }).addTo(map);
+
+        // Atualizar a posição do marker de posição atual quando a posição do usuário mudar
+        function onLocationFound(e) {
+          const radius = e.accuracy;
+          currentPositionAccuracyCenter.setLatLng(e.latlng);
+          currentPositionAccuracy.setLatLng(e.latlng);
+          currentPositionAccuracy.setRadius(radius);
+        }
+        function panTo() {
+          map.panTo(currentPositionAccuracyCenter._latlng);
+        }
+        // Se houver um erro ao tentar encontrar a localização do usuário, exibir uma mensagem de erro
+        function onLocationError(e) {
+          alert(e.message);
+        }
+
+        // Pedir permissão para acessar a localização do usuário e, em seguida, mostrar sua posição atual no mapa
+        map.on("locationfound", onLocationFound);
+        map.on("locationerror", onLocationError);
+        map.locate({ setView: true, maxZoom: 16 });
 
         map.on("click", function (e) {
           if (c) {
@@ -1049,7 +1142,6 @@
           });
         });
       } else {
-        console.log(8);
         bancoDeDados = new BancoDeDados(secretKVDB, nomeDaChaveNoKVDB, email);
         divStatus.innerHTML += "<br><br>atualizando dados";
         atualizarMapaDuranteAInicializacao()
