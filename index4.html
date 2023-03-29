@@ -11,6 +11,10 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script
+      type="text/javascript"
+      src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+    ></script>
   </head>
   <body>
     <div id="divStatus" style="font-size: 26px; color: red"></div>
@@ -135,6 +139,16 @@
           secretKVDB = params.get("id");
         }
       }
+
+      function traduzirPalavra(palavra) {
+        const tradutor = new google.translate.TranslateElement({
+          pageLanguage: "en",
+        });
+        tradutor.translate(palavra, "pt", (resultado) => {
+          console.log(resultado.translation);
+        });
+      }
+
       divStatus.innerHTML = "carregando dados da API";
       //caso a hashBucket nao tenha sido informado no URL
       if (!secretKVDB) {
@@ -188,7 +202,9 @@
 
       async function obterPalavrasDistintas(texto) {
         // Transforma todas as letras em minúsculas e remove todos os caracteres que não são letras ou espaços
-        const textoProcessado = texto.toLowerCase().replace(/[^a-z\s]/g, "");
+        const textoProcessado = texto
+          .toLowerCase()
+          .replace(/<[^>]+>|[^a-zA-Z\s]/g, ""); //.replace(/[^a-z\s]/g, "");
         // Divide o texto processado em uma lista de palavras
         const palavras = textoProcessado.split(/\s+/);
         const frequencias = new Map();
@@ -210,23 +226,9 @@
 
         let dadosNuvem = await bancoDeDados.dados;
 
-        listaDadosNovaLegenda = Array.from(frequencias)
-          .map((a, b) => {
-            return { palavra: a[0], valor: a[1] };
-          })
-          .sort((a, b) => {
-            const nameA = a.palavra.toUpperCase(); // ignore upper and lowercase
-            const nameB = b.palavra.toUpperCase(); // ignore upper and lowercase
-            if (nameA < nameB) {
-              return -1;
-            }
-            if (nameA > nameB) {
-              return 1;
-            }
-
-            // names must be equal
-            return 0;
-          });
+        listaDadosNovaLegenda = Array.from(frequencias).map((a, b) => {
+          return { palavra: a[0], valor: a[1] };
+        }); //.sort((a,b)=>{a.valor.conheco<b.valor.conheco })
 
         listaDadosNovaLegenda
           .filter((e) => dadosNuvem.some((ee) => ee.palavra == e.palavra))
@@ -239,6 +241,15 @@
             )}%`;
             totalPalavrasConheco.innerHTML = `Total Palavras que jah conheço ${dadosNuvem.length}`;
           });
+
+        listaDadosNovaLegenda = listaDadosNovaLegenda.sort((a, b) => {
+          if (a.valor.conheco == b.valor.conheco) {
+            return a.palavra
+              .toUpperCase()
+              .localeCompare(b.palavra.toUpperCase()); // ignore upper and lowercase
+          }
+          return a.valor.conheco - b.valor.conheco;
+        });
 
         await mostrarResultados(listaDadosNovaLegenda);
       }
@@ -266,6 +277,10 @@
             row = document.createElement("tr");
             row.setAttribute("data-palavra", palavra);
 
+            const tdIndex = document.createElement("td");
+            tdIndex.textContent = index;
+            row.appendChild(tdIndex);
+
             const palavraCell = document.createElement("td");
             palavraCell.textContent = palavra;
             row.appendChild(palavraCell);
@@ -280,13 +295,12 @@
               if (!palavraDados) {
                 //cor = "green";
                 quantidadeBotao.innerHTML = `<button class="btnConheco" style="color:${cor}" data-palavra="${palavra}"> Conheço</button>`;
-              }else{
-                quantidadeBotao.innerHTML = `✅`
+              } else {
+                quantidadeBotao.innerHTML = `✅`;
               }
               //palavraDados.
             }
             row.appendChild(quantidadeBotao);
-
 
             tableBody.appendChild(row);
           }
@@ -299,6 +313,7 @@
       }
       $("body").on("click", ".btnConheco", async function (a) {
         a.target.innerHTML = "salvando...";
+        $(".btnConheco").attr("disabled", true);
         let dados = await bancoDeDados.dados;
 
         let dadoArray = listaDadosNovaLegenda.find(
@@ -306,10 +321,11 @@
         );
         dadoArray.conheco = 1;
         dados.push(dadoArray);
-        bancoDeDados.dados = dados;
-        a.target.style.color = "green";
-        a.target.innerHTML = "salvo";
-        a.currentTarget.parentElement.innerHTML=`✅`;
+        await (bancoDeDados.dados = dados);
+        // a.target.style.color = "green";
+        // a.target.innerHTML = "salvo";
+        $(".btnConheco").attr("disabled", false);
+        a.currentTarget.parentElement.innerHTML = `✅`;
       });
       document.querySelector("#processButton").addEventListener("click", () => {
         const fileInput = document.querySelector("#fileInput");
