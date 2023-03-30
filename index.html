@@ -9,7 +9,8 @@
         height: 100%;
       }
 
-      .btnExcluirMarcador {
+      .btnExcluirMarcador,
+      .btnUpdateCity {
         background: none !important;
         border: none;
         padding: 0 !important;
@@ -82,6 +83,12 @@
       <button onClick="panTo()">Go to my locattion</button
       ><label>
         Live track me <input id="chkLiveTrack" type="checkbox" />
+      </label>
+    </div>
+    <div>
+      <button onClick="panTo()">Leave bread crumbs</button>
+      <label>
+        Auto(Every 5min) <input id="chkLiveTrack" type="checkbox" />
       </label>
     </div>
     <div id="mapid" class="map"></div>
@@ -422,6 +429,7 @@
               "<button class='btnExcluirMarcador' data-id='" +
                 e.latlng.id +
                 "'>Delete |</button>" +
+                `<button  class="btnUpdateCity"  data-id='${e.latlng.id}''>Update City Name</button>` +
                 "<br>" +
                 "<label>Color</label><select class='optionsColorMarker'  data-id='" +
                 e.latlng.id +
@@ -479,6 +487,7 @@
             "<button class='btnExcluirMarcador' data-id='" +
               e.id +
               "'>Delete |</button>" +
+              `<button  class="btnUpdateCity"  data-id='${e.id}''>Update City Name</button>` +
               "<br>" +
               "<label>Color</label><select class='optionsColorMarker'  data-id='" +
               e.id +
@@ -503,6 +512,15 @@
       $("body").on("click", ".btnExcluirMarcador", function (e) {
         onPopupOpen2(e.target.dataset.id);
       });
+
+      $("body").on("click", ".btnUpdateCity", async function (e) {
+        //onPopupOpen2(e.target.dataset.id);
+        let marcador = map._layers[e.target.dataset.id];
+        let city = await getCity(marcador._latlng.lat, marcador._latlng.lng);
+
+        console.log(city);
+      });
+
       $("#chkLiveTrack").change(function (a, b, c) {
         console.log(this.checked);
       });
@@ -586,6 +604,23 @@
           }
           default:
             return greenIconRecuperado;
+        }
+      }
+
+      async function getCity(latitude, longitude) {
+        const apiKey = "84eaf0ee63644a0c96d658f04121c061";
+
+        const apiUrl = `https://api.opencagedata.com/geocode/v1/json?key=${apiKey}&q=${latitude}+${longitude}&pretty=1&no_annotations=1`;
+        try {
+          let response = await fetch(apiUrl);
+
+          let data = await response.json();
+          // Extrair o nome da cidade a partir do objeto de resposta JSON
+          const cityName = data.results[0].components.city;
+          const endereco = data.results[0].formatted;
+          return { city: cityName, address: endereco };
+        } catch (e) {
+          return { city: e.message, address: "" };
         }
       }
 
@@ -932,7 +967,7 @@
       let currentPositionAccuracy;
       // check for Geolocation support
       if (navigator.geolocation) {
-        navigator.geolocation.watchPosition(function (position) {
+        navigator.geolocation.watchPosition(async function (position) {
           const latitude = position.coords.latitude;
           const longitude = position.coords.longitude;
 
@@ -943,38 +978,28 @@
           const apiUrl = `https://api.opencagedata.com/geocode/v1/json?key=${apiKey}&q=${latitude}+${longitude}&pretty=1&no_annotations=1`;
           displayTimer();
           start();
-          fetch(apiUrl)
-            .then((response) => response.json())
-            .then((data) => {
-              // Extrair o nome da cidade a partir do objeto de resposta JSON
-              const cityName = data.results[0].components.city;
-              const endereco = data.results[0].formatted;
 
-              divCurrentLocation.innerHTML = `localização atual >>Cidade: ${cityName} <br> endereco: ${endereco} <br> latitude:${
-                position.coords.latitude
-              } longitude:${
-                position.coords.longitude
-              } <br> precisão: ${position.coords.accuracy.toFixed(2)} metros`;
+          let data = await getCity(latitude, longitude);
+          // Extrair o nome da cidade a partir do objeto de resposta JSON
+          const cityName = data.city;
+          const endereco = data.address;
+          const radius = position.coords.accuracy;
 
-              const radius = position.coords.accuracy;
-              let posicaoAtual = new L.LatLng(
-                position.coords.latitude,
-                position.coords.longitude
-              );
-              currentPositionAccuracyCenter.setLatLng(posicaoAtual);
-              currentPositionAccuracy.setLatLng(posicaoAtual);
-              currentPositionAccuracy.setRadius(radius);
+          divCurrentLocation.innerHTML = `localização atual >>Cidade: ${cityName} <br> endereco: ${endereco} <br> latitude:${latitude} longitude:${longitude} <br> precisão: ${radius.toFixed(
+            2
+          )} metros`;
 
-              reset();
-              start();
+          let posicaoAtual = new L.LatLng(latitude, longitude);
+          currentPositionAccuracyCenter.setLatLng(posicaoAtual);
+          currentPositionAccuracy.setLatLng(posicaoAtual);
+          currentPositionAccuracy.setRadius(radius);
 
-              if ($("#chkLiveTrack")[0].checked) {
-                panTo();
-              }
-            })
-            .catch((error) => {
-              console.log(`Ocorreu um erro: ${error}`);
-            });
+          reset();
+          start();
+
+          if ($("#chkLiveTrack")[0].checked) {
+            panTo();
+          }
         });
 
         var map = L.map("mapid", {
@@ -1033,7 +1058,6 @@
           map.panTo(currentPositionAccuracyCenter._latlng);
         }
 
-
         map.on("click", function (e) {
           if (c) {
             console.log("circulo adicionado", c, l);
@@ -1053,7 +1077,6 @@
         });
 
         map.on("moveend", async function () {
-          console.log(bancoDeDados);
           if (bancoDeDados != null) {
             await bancoDeDados.updateActualBound(map.getBounds());
           }

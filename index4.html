@@ -37,8 +37,10 @@
       <table id="resultsTable">
         <thead>
           <tr>
+            <th>#</th>
             <th>Palavra</th>
             <th>Quantidade</th>
+            <th>Ação</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -46,6 +48,11 @@
     </div>
     <script>
       class BancoDeDados {
+        //Cluster42xxx
+        //acessoPeloSiteMesmoMaster
+        //6425c3532ca2d2f449e13096
+        //TSJpc8ArWLSx7M4jdYYbHC6PqM5h0ewhDsA7f6bKw56QrSaZaFxPkTpNescEHe0k
+        //https://sa-east-1.aws.data.mongodb-api.com/app/data-rwbnj/endpoint/data/v1
         static #endPoint = "https://kvdb.io/";
         #rashBucket;
         #keyInTheRashBucketName;
@@ -87,7 +94,7 @@
         }
 
         set dados(valor) {
-          return this.#setDados(valor);
+          return this.setDados(valor);
         }
 
         async updatePropriedade(propriedade, valor) {
@@ -100,7 +107,7 @@
           return (this.dados = this.#defaultObject);
         }
 
-        async #setDados(objeto, onsuccess) {
+        async setDados(objeto, onsuccess) {
           try {
             let response = fetch(
               BancoDeDados.#endPoint +
@@ -321,7 +328,8 @@
         );
         dadoArray.conheco = 1;
         dados.push(dadoArray);
-        await (bancoDeDados.dados = dados);
+        //await (bancoDeDados.dados = dados);
+        await bancoDeDados.setDados(dados);
         // a.target.style.color = "green";
         // a.target.innerHTML = "salvo";
         $(".btnConheco").attr("disabled", false);
