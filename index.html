@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      .map {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+      }
+
+      .btnExcluirMarcador,
+      .btnUpdateCity {
+        background: none !important;
+        border: none;
+        padding: 0 !important;
+        /*optional*/
+        font-family: arial, sans-serif;
+        /*input has OS specific font-family*/
+        color: #069;
+        text-decoration: underline;
+        cursor: pointer;
+      }
+    </style>
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+      integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+      crossorigin=""
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-contextmenu/1.4.0/leaflet.contextmenu.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@opencage/leaflet-opencage-geosearch/leaflet-opencage-geosearch.css"
+    />
+
+    <script
+      src="https://code.jquery.com/jquery-3.4.1.js"
+      integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU="
+      crossorigin="anonymous"
+    ></script>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+      integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+      crossorigin=""
+    ></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-textpath@1.2.0/leaflet.textpath.min.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-contextmenu/1.4.0/leaflet.contextmenu.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@opencage/geosearch-bundle"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@opencage/leaflet-opencage-geosearch"></script>
+  </head>
+  <body>
+    <div>
+      Instruções:
+      <ul>
+        <li>
+          caso esteja acessando a pagina pelo celular de um toque na tela longo
+          para opções
+        </li>
+        <li>
+          caso esteja acessando a pagina pelo computador , clique com botão
+          direito para opções
+        </li>
+        <li>Ultima Atualização: 28/03/2023</li>
+      </ul>
+    </div>
+    <div id="divStatus" style="font-size: 26px; color: red"></div>
+    <div id="divCurrentLocation" style="font-size: 16px; color: green"></div>
+    <div id="divLastUpdateSince"></div>
+    <div>
+      <button onClick="panTo()">Go to my locattion</button
+      ><label>
+        Live track me <input id="chkLiveTrack" type="checkbox" />
+      </label>
+    </div>
+    <div>
+      <button onClick="panTo()">Leave bread crumbs</button>
+      <label>
+        Auto(Every 5min) <input id="chkLiveTrack" type="checkbox" />
+      </label>
+    </div>
+    <div id="mapid" class="map"></div>
+
+    <script>
+      var greenIconTriumph = new L.Icon({
+        iconUrl: "https://www.triumphmotorcycles.com/images/map-icons/0.png",
+        //iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        //shadowSize: [41, 41]
+      });
+
+      var greenIconYellow = new L.Icon({
+        iconUrl:
+          "https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png",
+        shadowUrl:
+          "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+      });
+
+      var greenIconSendoExcluido = new L.Icon({
+        iconUrl:
+          "https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png",
+        shadowUrl:
+          "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+      });
+
+      var greenIconInseridoENaoSalvo = new L.Icon({
+        iconUrl:
+          "https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
+        shadowUrl:
+          "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+      });
+
+      var greenIconInseridoESalvo = new L.Icon({
+        iconUrl:
+          "https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+        shadowUrl:
+          "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+      });
+
+      var greenIconRecuperado = new L.Icon({
+        iconUrl:
+          "https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
+        shadowUrl:
+          "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+      });
+    </script>
+
+    <script>
+      class BancoDeDados {
+        static endPoint = "https://kvdb.io/";
+        constructor(secret, key, email) {
+          this.secret = secret;
+          this.key = key;
+          this.email = email;
+        }
+
+        static async getNewKey(email) {
+          let response = await fetch(this.endPoint, {
+            method: "post",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email }),
+          });
+          let newKey = await response.text();
+          return newKey;
+        }
+
+        async getDados() {
+          let response = await fetch(
+            BancoDeDados.endPoint + this.secret + "/" + this.key
+          );
+          let dados = await response.json();
+          return dados;
+        }
+
+        async adicionarCirculo(id, latLngCentro, raio, latLngLinha) {
+          var dados = await this.getDados();
+          dados.circulos.push({
+            id: id,
+            centro: latLngCentro,
+            raio: raio,
+            linha: latLngLinha,
+          });
+          await this.setDados(dados);
+        }
+
+        async adicionarMarcadores(id, lat, lng) {
+          var dados = await this.getDados();
+          dados.marcadores.push({ id: id, lat: lat, lng: lng, cor: "blue" });
+          await this.setDados(dados);
+        }
+
+        async atualizarCorMarcador(id, cor) {
+          var dados = await this.getDados();
+          let marcadorTrocarCor = dados.marcadores.find((e) => e.id == id);
+          marcadorTrocarCor.cor = cor;
+          await this.setDados(dados);
+        }
+
+        async updateActualBound(bound) {
+          var dados = await this.getDados();
+          dados.lastBound = bound;
+          await this.setDados(dados);
+        }
+
+        async removerMarcador(id) {
+          var dados = await this.getDados();
+          dados.marcadores = dados.marcadores.filter(function (e) {
+            return e.id != id;
+          });
+
+          await this.setDados(dados);
+        }
+        async removerCirculo(id) {
+          var dados = await this.getDados();
+          dados.circulos = dados.circulos.filter(function (e) {
+            return e.id != id;
+          });
+
+          this.setDados(dados);
+        }
+
+        async removerLinha(id) {
+          var dados = await this.getDados();
+          dados.linhas = dados.linhas.filter(function (e) {
+            return e.id != id;
+          });
+
+          await this.setDados(dados);
+        }
+
+        async adicionarLinha(id, latLngs) {
+          var dados = await this.getDados();
+          dados.linhas.push({ id, latLngs });
+          this.setDados(dados);
+        }
+
+        async setDados(objeto, onsuccess) {
+          try {
+            let response = await fetch(
+              BancoDeDados.endPoint + this.secret + "/" + this.key,
+              {
+                method: "post",
+                body: JSON.stringify(objeto),
+                headers: { "Content-Type": "application/json" },
+              }
+            );
+            if (response.status != 200) {
+              return await response.text();
+            } else if (response.status == 200 && onsuccess) {
+              onsuccess();
+            }
+          } catch (e) {
+            throw e;
+          }
+        }
+      }
+    </script>
+
+    <script>
+      function addCircle(e) {
+        l = L.polyline(
+          [
+            [e.latlng.lat, e.latlng.lng],
+            [e.latlng.lat, e.latlng.lng],
+          ],
+          { color: "red" }
+        ).addTo(map);
+
+        c = L.circle([e.latlng.lat, e.latlng.lng], 1 * 10000).addTo(map);
+
+        c.idLinha = l._leaflet_id;
+
+        c.on("click", async function (originalEvent) {
+          if (c == null) {
+            map.removeLayer(this);
+            map.removeLayer(map._layers[this.idLinha]);
+            bancoDeDados.removerCirculo(this._leaflet_id);
+          }
+        });
+      }
+
+      function addCircle2(e) {
+        l = L.polyline(
+          [
+            [e.linha[0].lat, e.linha[0].lng],
+            [e.linha[1].lat, e.linha[1].lng],
+          ],
+          { color: "red" }
+        ).addTo(map);
+
+        var distance = map.distance(e.linha[0], e.linha[1]);
+        l.setText("");
+        l.setText(new String((distance / 1000).toFixed(4)) + " Km", {
+          center: true,
+        });
+
+        c = L.circle([e.centro.lat, e.centro.lng], distance).addTo(map);
+
+        c.idLinha = l._leaflet_id;
+        e.idLinha = c.idLinha;
+        e.id = c._leaflet_id;
+
+        c.on("click", async function (originalEvent) {
+          if (c == null) {
+            map.removeLayer(this);
+            map.removeLayer(map._layers[this.idLinha]);
+            bancoDeDados.removerCirculo(this._leaflet_id);
+          }
+        });
+
+        l = null;
+        c = null;
+      }
+
+      function addLine(e) {
+        l = L.polyline(
+          [
+            [e.latlng.lat, e.latlng.lng],
+            [e.latlng.lat, e.latlng.lng],
+          ],
+          { color: "red" }
+        ).addTo(map);
+
+        l.on("click", function (originalEvent) {
+          if (l == null) {
+            map.removeLayer(this);
+            bancoDeDados.removerLinha(this._leaflet_id);
+          }
+        });
+      }
+
+      function addLine2(e) {
+        l = L.polyline(
+          [
+            [e.latLngs[0].lat, e.latLngs[0].lng],
+            [e.latLngs[1].lat, e.latLngs[1].lng],
+          ],
+          { color: "red" }
+        ).addTo(map);
+
+        e.id = l._leaflet_id;
+        l.on("click", function (originalEvent) {
+          if (l == null) {
+            map.removeLayer(this);
+            bancoDeDados.removerLinha(this._leaflet_id);
+          }
+        });
+
+        var distance = map.distance(e.latLngs[0], e.latLngs[1]);
+        l.setText("");
+        l.setText(new String((distance / 1000).toFixed(4)) + " Km", {
+          center: true,
+        });
+
+        l = null;
+      }
+
+      function showCoordinates(e) {
+        alert(e.latlng);
+      }
+
+      function tragetoriaDe(e) {
+        de = e;
+        if (ate) {
+          rota = criarRota(de, ate, map);
+          L.Routing.errorControl(rota).addTo(map);
+          de = null;
+          ate = null;
+        }
+      }
+
+      function tragetoriaAte(e) {
+        ate = e;
+
+        if (de) {
+          rota = criarRota(de, ate, map);
+          L.Routing.errorControl(rota).addTo(map);
+          de = null;
+          ate = null;
+        }
+      }
+
+      function criarRota(_de, _ate, _map) {
+        return L.Routing.control({
+          waypoints: [_de.latlng, _ate.latlng],
+          routeWhileDragging: true,
+        })
+          .on("routeselected", function (e) {
+            var route = e.route;
+            //alert('Showing route between waypoints:\n' + JSON.stringify(route.inputWaypoints, null, 2));
+          })
+          .on("routingerror", function (e) {
+            alert(JSON.parse(erro.error.target.responseText).message);
+          })
+          .addTo(_map);
+      }
+
+      function adicionarAoFim(e) {
+        rota.spliceWaypoints(9999, 0, e.latlng);
+      }
+
+      function addMarcador(e) {
+        // se c é verdadeiro significa que o usuario esta setando o raio do circulo, e para finalizar torna o c nulo novamente
+        if (c) {
+          c = null;
+        } else {
+          if (countMarcadoresSendoExcluido == 0) {
+            //este if é para previnir que duas requisiçõe ssejam criadas ao mesmo tempo, sem que a anterior tenha sido concluida. Quando isto ocorre, o primeiro marcador é perdido desvido a uma questão de sincronia
+            countMarcadoresSendoExcluido++;
+            var marker = L.marker([e.latlng.lat, e.latlng.lng], {
+              icon: greenIconInseridoENaoSalvo,
+            }).addTo(map);
+            e.latlng.id = marker._leaflet_id;
+            //var POPUP = marker.bindPopup("");
+            var POPUP = marker.bindPopup(
+              "<button class='btnExcluirMarcador' data-id='" +
+                e.latlng.id +
+                "'>Delete |</button>" +
+                `<button  class="btnUpdateCity"  data-id='${e.latlng.id}''>Update City Name</button>` +
+                "<br>" +
+                "<label>Color</label><select class='optionsColorMarker'  data-id='" +
+                e.latlng.id +
+                "'><option></option><option>gray</option><option>red</option><option>blue</option><option>green</option><option>yellow</option></select>"
+            );
+            //marker.on("popupopen", onPopupOpen);
+
+            bancoDeDados
+              .adicionarMarcadores(e.latlng.id, e.latlng.lat, e.latlng.lng)
+              .then((dado) => {
+                marker.setIcon(greenIconInseridoESalvo);
+                countMarcadoresSendoExcluido--;
+              });
+          }
+        }
+      }
+
+      function onPopupOpen(a, b) {
+        if (countMarcadoresSendoExcluido == 0) {
+          countMarcadoresSendoExcluido++;
+          a.popup._source.setIcon(greenIconSendoExcluido);
+          //tem que melhorar a logica de identificar qual item do arrayq ue est no banco de dados deve ser excluido, ta zuado
+          var latlng = a.popup._source.getLatLng();
+          latlng.id = a.popup._source._leaflet_id;
+          bancoDeDados.removerMarcador(latlng.id).then((dado) => {
+            map.removeLayer(a.popup._source);
+            countMarcadoresSendoExcluido--;
+          });
+        } else {
+        }
+      }
+
+      function onPopupOpen2(id) {
+        if (countMarcadoresSendoExcluido == 0) {
+          countMarcadoresSendoExcluido++;
+          map._layers[id].setIcon(greenIconSendoExcluido);
+          //tem que melhorar a logica de identificar qual item do arrayq ue est no banco de dados deve ser excluido, ta zuado
+          bancoDeDados.removerMarcador(id).then((dado) => {
+            map.removeLayer(map._layers[id]);
+            countMarcadoresSendoExcluido--;
+          });
+        } else {
+        }
+      }
+
+      async function atualizarMapaDuranteAInicializacao() {
+        let dados = await bancoDeDados.getDados();
+
+        $(dados.marcadores).each(function (i, e) {
+          var marker = L.marker([e.lat, e.lng], {
+            icon: getIconColor(e.cor),
+          }).addTo(map);
+          e.id = marker._leaflet_id;
+          var POPUP = marker.bindPopup(
+            "<button class='btnExcluirMarcador' data-id='" +
+              e.id +
+              "'>Delete |</button>" +
+              `<button  class="btnUpdateCity"  data-id='${e.id}''>Update City Name</button>` +
+              "<br>" +
+              "<label>Color</label><select class='optionsColorMarker'  data-id='" +
+              e.id +
+              "'><option></option><option>gray</option><option>red</option><option>blue</option><option>green</option><option>yellow</option></select>"
+          );
+          //marker.on("popupopen", onPopupOpen);
+        });
+
+        $(dados.linhas).each(function (i, e) {
+          addLine2(e);
+        });
+
+        $(dados.circulos).each(function (i, e) {
+          addCircle2(e);
+        });
+
+        await bancoDeDados.setDados(dados);
+
+        return dados;
+      }
+
+      $("body").on("click", ".btnExcluirMarcador", function (e) {
+        onPopupOpen2(e.target.dataset.id);
+      });
+
+      $("body").on("click", ".btnUpdateCity", async function (e) {
+        //onPopupOpen2(e.target.dataset.id);
+        let marcador = map._layers[e.target.dataset.id];
+        let city = await getCity(marcador._latlng.lat, marcador._latlng.lng);
+
+        console.log(city);
+      });
+
+      $("#chkLiveTrack").change(function (a, b, c) {
+        console.log(this.checked);
+      });
+      $("body").on("change", ".optionsColorMarker", async function (e) {
+        let novaCor = getIconColor(e.target.value);
+
+        let idMarcador = e.target.dataset.id;
+
+        map._layers[idMarcador].setIcon(novaCor);
+        await bancoDeDados.atualizarCorMarcador(idMarcador, e.target.value);
+      });
+      let milliseconds = 0;
+      let seconds = 0;
+      let minutes = 0;
+      let hours = 0;
+      let timer;
+
+      function displayTimer() {
+        const timerElement = document.getElementById("divLastUpdateSince");
+        timerElement.textContent = `tempo desde última atualização: ${hours
+          .toString()
+          .padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds
+          .toString()
+          .padStart(2, "0")}:${milliseconds.toString().padStart(3, "0")}`;
+      }
+
+      function start() {
+        timer = setInterval(() => {
+          milliseconds++;
+          if (milliseconds === 1000) {
+            milliseconds = 0;
+            seconds++;
+          }
+          if (seconds === 60) {
+            seconds = 0;
+            minutes++;
+          }
+          if (minutes === 60) {
+            minutes = 0;
+            hours++;
+          }
+          displayTimer();
+        }, 1);
+      }
+
+      function stop() {
+        clearInterval(timer);
+      }
+
+      function reset() {
+        clearInterval(timer);
+        milliseconds = 0;
+        seconds = 0;
+        minutes = 0;
+        hours = 0;
+        displayTimer();
+      }
+
+      function getIconColor(novaCor) {
+        switch (novaCor) {
+          case "red": {
+            return greenIconInseridoENaoSalvo;
+
+            break;
+          }
+          case "blue": {
+            return greenIconRecuperado;
+            break;
+          }
+          case "green": {
+            return greenIconInseridoESalvo;
+            break;
+          }
+          case "yellow": {
+            return greenIconYellow;
+            break;
+          }
+          case "gray": {
+            return greenIconSendoExcluido;
+            break;
+          }
+          default:
+            return greenIconRecuperado;
+        }
+      }
+
+      async function getCity(latitude, longitude) {
+        const apiKey = "84eaf0ee63644a0c96d658f04121c061";
+
+        const apiUrl = `https://api.opencagedata.com/geocode/v1/json?key=${apiKey}&q=${latitude}+${longitude}&pretty=1&no_annotations=1`;
+        try {
+          let response = await fetch(apiUrl);
+
+          let data = await response.json();
+          // Extrair o nome da cidade a partir do objeto de resposta JSON
+          const cityName = data.results[0].components.city;
+          const endereco = data.results[0].formatted;
+          return { city: cityName, address: endereco };
+        } catch (e) {
+          return { city: e.message, address: "" };
+        }
+      }
+
+      function ondeTemTriumph() {
+        JSON.parse(
+          '[{"lat":-24.749077,"len":-65.48187899999999,"country":"Argentina","countryCode":"0"},{"lat":-32.929175,"len":-60.818805999999995,"country":"Argentina","countryCode":"0"},{"lat":0,"len":0,"country":"Argentina","countryCode":"0"},{"lat":-32.929824,"len":-68.810789,"country":"Argentina","countryCode":"0"},{"lat":0,"len":0,"country":"Argentina","countryCode":"0"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+
+        JSON.parse(
+          '[{"lat":-36.38371,"len":145.40695200000005,"country":"Australia","countryCode":"1"},{"lat":-33.828485,"len":151.00604199999998,"country":"Australia","countryCode":"1"},{"lat":-28.819791,"len":153.26578399999994,"country":"Australia","countryCode":"1"},{"lat":-32.923858,"len":151.72486600000002,"country":"Australia","countryCode":"1"},{"lat":-34.427644,"len":150.89237300000002,"country":"Australia","countryCode":"1"},{"lat":-37.805735,"len":144.94397100000003,"country":"Australia","countryCode":"1"},{"lat":-23.878708,"len":151.275482,"country":"Australia","countryCode":"1"},{"lat":-31.959235,"len":115.90310099999999,"country":"Australia","countryCode":"1"},{"lat":-35.327214,"len":149.17949699999997,"country":"Australia","countryCode":"1"},{"lat":-32.276466,"len":115.765897,"country":"Australia","countryCode":"1"},{"lat":-34.214073,"len":142.14569299999994,"country":"Australia","countryCode":"1"},{"lat":-42.874571,"len":147.32021199999997,"country":"Australia","countryCode":"1"},{"lat":-33.817381,"len":151.18104900000003,"country":"Australia","countryCode":"1"},{"lat":-41.157386,"len":146.169539,"country":"Australia","countryCode":"1"},{"lat":-12.429672,"len":130.91562699999997,"country":"Australia","countryCode":"1"},{"lat":-27.534171,"len":153.01521400000001,"country":"Australia","countryCode":"1"},{"lat":-34.927918,"len":138.590684,"country":"Australia","countryCode":"1"},{"lat":-37.994924,"len":145.21698300000003,"country":"Australia","countryCode":"1"},{"lat":-38.139471,"len":144.355048,"country":"Australia","countryCode":"1"},{"lat":-37.798482,"len":145.252298,"country":"Australia","countryCode":"1"},{"lat":-31.429491,"len":152.883603,"country":"Australia","countryCode":"1"},{"lat":-19.295071,"len":146.79671800000006,"country":"Australia","countryCode":"1"},{"lat":-25.28558,"len":152.83191699999998,"country":"Australia","countryCode":"1"},{"lat":-26.658946,"len":153.09679900000003,"country":"Australia","countryCode":"1"},{"lat":-31.111153,"len":150.92314199999998,"country":"Australia","countryCode":"1"},{"lat":-27.621855,"len":153.12351999999998,"country":"Australia","countryCode":"1"},{"lat":-27.366787,"len":153.06129499999997,"country":"Australia","countryCode":"1"},{"lat":-31.86082,"len":115.82605999999998,"country":"Australia","countryCode":"1"},{"lat":-28.001335,"len":153.34297600000002,"country":"Australia","countryCode":"1"},{"lat":-33.921682,"len":151.16394300000002,"country":"Australia","countryCode":"1"},{"lat":-16.92123,"len":145.76874499999997,"country":"Australia","countryCode":"1"},{"lat":-36.080427,"len":146.92342099999996,"country":"Australia","countryCode":"1"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":46.631347,"len":13.827530000000024,"country":"Austria","countryCode":"2"},{"lat":51.36253,"len":9.387460000000033,"country":"Austria","countryCode":"2"},{"lat":52.56295,"len":13.460149999999999,"country":"Austria","countryCode":"2"},{"lat":51.977444,"len":8.477993999999967,"country":"Austria","countryCode":"2"},{"lat":50.27426,"len":10.974539999999934,"country":"Austria","countryCode":"2"},{"lat":53.5377,"len":10.066839999999956,"country":"Austria","countryCode":"2"},{"lat":51.487657,"len":7.554033000000004,"country":"Austria","countryCode":"2"},{"lat":48.67664,"len":9.208190000000059,"country":"Austria","countryCode":"2"},{"lat":50.294564,"len":8.685333000000014,"country":"Austria","countryCode":"2"},{"lat":53.591343,"len":9.825244999999995,"country":"Austria","countryCode":"2"},{"lat":48.18779,"len":11.566299999999956,"country":"Austria","countryCode":"2"},{"lat":51.68494,"len":6.143320000000017,"country":"Austria","countryCode":"2"},{"lat":48.83259,"len":10.087710000000015,"country":"Austria","countryCode":"2"},{"lat":47.610514,"len":9.897874000000002,"country":"Austria","countryCode":"2"},{"lat":48.31393,"len":10.888720000000035,"country":"Austria","countryCode":"2"},{"lat":49.84902,"len":7.887410000000045,"country":"Austria","countryCode":"2"},{"lat":50.76229,"len":7.122366000000056,"country":"Austria","countryCode":"2"},{"lat":48.180268,"len":12.965333999999984,"country":"Austria","countryCode":"2"},{"lat":52.25393,"len":10.552090000000021,"country":"Austria","countryCode":"2"},{"lat":52.9046,"len":8.87869999999998,"country":"Austria","countryCode":"2"},{"lat":49.20264,"len":12.668069999999943,"country":"Austria","countryCode":"2"},{"lat":50.863486,"len":12.85345099999995,"country":"Austria","countryCode":"2"},{"lat":47.626422,"len":7.610120000000052,"country":"Austria","countryCode":"2"},{"lat":51.081191,"len":13.760739000000058,"country":"Austria","countryCode":"2"},{"lat":51.222408,"len":6.8253819999999905,"country":"Austria","countryCode":"2"},{"lat":52.481297,"len":7.20688999999993,"country":"Austria","countryCode":"2"},{"lat":50.973407,"len":11.050817000000052,"country":"Austria","countryCode":"2"},{"lat":52.37596,"len":14.070590000000038,"country":"Austria","countryCode":"2"},{"lat":50.85033,"len":12.072260000000028,"country":"Austria","countryCode":"2"},{"lat":52.44662,"len":9.612070000000017,"country":"Austria","countryCode":"2"},{"lat":50.93329,"len":7.193724999999972,"country":"Austria","countryCode":"2"},{"lat":51.31793,"len":12.394310000000019,"country":"Austria","countryCode":"2"},{"lat":52.165714,"len":11.608707999999979,"country":"Austria","countryCode":"2"},{"lat":50.14711,"len":8.950749999999971,"country":"Austria","countryCode":"2"},{"lat":49.448478,"len":8.50473199999999,"country":"Austria","countryCode":"2"},{"lat":48.4739,"len":9.25981999999999,"country":"Austria","countryCode":"2"},{"lat":49.346025,"len":7.1592580000000225,"country":"Austria","countryCode":"2"},{"lat":48.74461,"len":13.749040000000036,"country":"Austria","countryCode":"2"},{"lat":48.15953,"len":15.10591999999997,"country":"Austria","countryCode":"2"},{"lat":49.44875,"len":10.992271999999957,"country":"Austria","countryCode":"2"},{"lat":52.24043,"len":8.139459999999985,"country":"Austria","countryCode":"2"},{"lat":47.381156,"len":15.67806799999994,"country":"Austria","countryCode":"2"},{"lat":51.72838,"len":8.794380000000046,"country":"Austria","countryCode":"2"},{"lat":49.031219,"len":12.128105000000005,"country":"Austria","countryCode":"2"},{"lat":49.66232,"len":8.258199999999988,"country":"Austria","countryCode":"2"},{"lat":49.24544,"len":8.883270000000039,"country":"Austria","countryCode":"2"},{"lat":54.0926,"len":12.110199999999963,"country":"Austria","countryCode":"2"},{"lat":48.112962,"len":8.616218000000003,"country":"Austria","countryCode":"2"},{"lat":47.80856,"len":10.873460000000023,"country":"Austria","countryCode":"2"},{"lat":50.88824,"len":8.025719999999978,"country":"Austria","countryCode":"2"},{"lat":46.805618,"len":15.566134000000034,"country":"Austria","countryCode":"2"},{"lat":48.266348,"len":7.814299000000005,"country":"Austria","countryCode":"2"},{"lat":47.303295,"len":11.63562300000001,"country":"Austria","countryCode":"2"},{"lat":48.193992,"len":16.333354999999983,"country":"Austria","countryCode":"2"},{"lat":48.276029,"len":16.38837000000001,"country":"Austria","countryCode":"2"},{"lat":50.703,"len":12.446500000000015,"country":"Austria","countryCode":"2"},{"lat":49.78742,"len":9.94344000000001,"country":"Austria","countryCode":"2"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+
+        JSON.parse(
+          '[{"lat":51.204208,"len":3.7632039999999733,"country":"Belgium","countryCode":"3"},{"lat":50.927425,"len":4.925543999999945,"country":"Belgium","countryCode":"3"},{"lat":49.856233,"len":6.045463000000041,"country":"Belgium","countryCode":"3"},{"lat":50.530725,"len":5.812948000000006,"country":"Belgium","countryCode":"3"},{"lat":51.145931,"len":5.001782999999932,"country":"Belgium","countryCode":"3"},{"lat":49.848777,"len":5.44351400000005,"country":"Belgium","countryCode":"3"},{"lat":51.323022,"len":4.376806999999985,"country":"Belgium","countryCode":"3"},{"lat":50.636697,"len":6.039026000000035,"country":"Belgium","countryCode":"3"},{"lat":50.41262,"len":4.420623999999975,"country":"Belgium","countryCode":"3"},{"lat":50.948748,"len":3.985290999999961,"country":"Belgium","countryCode":"3"},{"lat":50.886325,"len":4.470653999999968,"country":"Belgium","countryCode":"3"},{"lat":50.804619,"len":3.166121999999973,"country":"Belgium","countryCode":"3"},{"lat":50.697056,"len":4.4026850000000195,"country":"Belgium","countryCode":"3"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":-23.619137,"len":-46.698305000000005,"country":"Brazil","countryCode":"5"},{"lat":-12.897219,"len":-38.32938100000001,"country":"Brazil","countryCode":"5"},{"lat":-19.967863,"len":-43.95741399999997,"country":"Brazil","countryCode":"5"},{"lat":-15.866688,"len":-47.96344899999997,"country":"Brazil","countryCode":"5"},{"lat":-15.6381,"len":-56.121285,"country":"Brazil","countryCode":"5"},{"lat":-25.440891,"len":-49.306258000000014,"country":"Brazil","countryCode":"5"},{"lat":-27.577635,"len":-48.59245499999997,"country":"Brazil","countryCode":"5"},{"lat":-29.99957,"len":-51.19442000000004,"country":"Brazil","countryCode":"5"},{"lat":-3.738074,"len":-38.52387699999997,"country":"Brazil","countryCode":"5"},{"lat":-16.703001,"len":-49.23112000000003,"country":"Brazil","countryCode":"5"},{"lat":-23.30614,"len":-51.170862,"country":"Brazil","countryCode":"5"},{"lat":-23.20086,"len":-45.91013699999996,"country":"Brazil","countryCode":"5"},{"lat":-7.11577,"len":-34.83562599999999,"country":"Brazil","countryCode":"5"},{"lat":-23.00082,"len":-43.33206999999999,"country":"Brazil","countryCode":"5"},{"lat":-22.89201,"len":-47.02394300000003,"country":"Brazil","countryCode":"5"},{"lat":-23.586047,"len":-46.67357400000003,"country":"Brazil","countryCode":"5"},{"lat":-21.210259,"len":-47.816846999999996,"country":"Brazil","countryCode":"5"},{"lat":-20.285218,"len":-40.30258500000002,"country":"Brazil","countryCode":"5"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":45.90406,"len":-72.96003100000001,"country":"Canada","countryCode":"6"},{"lat":45.52799,"len":-73.29273999999998,"country":"Canada","countryCode":"6"},{"lat":49.663059,"len":-119.56178499999999,"country":"Canada","countryCode":"6"},{"lat":51.011554,"len":-114.04595799999998,"country":"Canada","countryCode":"6"},{"lat":52.169922,"len":-106.66476,"country":"Canada","countryCode":"6"},{"lat":43.848458,"len":-79.02036399999997,"country":"Canada","countryCode":"6"},{"lat":42.997292,"len":-81.21220199999999,"country":"Canada","countryCode":"6"},{"lat":48.452919,"len":-123.54191900000001,"country":"Canada","countryCode":"6"},{"lat":45.483971,"len":-73.557995,"country":"Canada","countryCode":"6"},{"lat":45.724778,"len":-73.691194,"country":"Canada","countryCode":"6"},{"lat":45.335182,"len":-75.72288700000001,"country":"Canada","countryCode":"6"},{"lat":46.102313,"len":-64.71271100000001,"country":"Canada","countryCode":"6"},{"lat":43.261875,"len":-79.88692400000002,"country":"Canada","countryCode":"6"},{"lat":53.499346,"len":-113.46631000000002,"country":"Canada","countryCode":"6"},{"lat":46.806226,"len":-71.29736100000002,"country":"Canada","countryCode":"6"},{"lat":45.38898,"len":-71.96067,"country":"Canada","countryCode":"6"},{"lat":49.173254,"len":-122.665955,"country":"Canada","countryCode":"6"},{"lat":49.258304,"len":-123.03972499999998,"country":"Canada","countryCode":"6"},{"lat":49.874944,"len":-97.39213000000001,"country":"Canada","countryCode":"6"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":0,"len":0,"country":"Colombia","countryCode":"7"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":9.941165,"len":84.12535200000002,"country":"Costa Rica","countryCode":"8"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":0,"len":0,"country":"Czech Republic","countryCode":"9"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":48.85681,"len":2.368220000000065,"country":"France","countryCode":"11"},{"lat":47.7663,"len":-3.3340590000000248,"country":"France","countryCode":"11"},{"lat":44.892714,"len":4.882657999999992,"country":"France","countryCode":"11"},{"lat":46.73601,"len":4.838529999999992,"country":"France","countryCode":"11"},{"lat":43.29348,"len":5.382360000000062,"country":"France","countryCode":"11"},{"lat":43.70696,"len":7.26929999999993,"country":"France","countryCode":"11"},{"lat":48.876338,"len":2.11702200000002,"country":"France","countryCode":"11"},{"lat":48.876193,"len":2.288579000000027,"country":"France","countryCode":"11"},{"lat":49.108707,"len":-1.1392849999999726,"country":"France","countryCode":"11"},{"lat":48.774755,"len":2.48776399999997,"country":"France","countryCode":"11"},{"lat":43.455329,"len":6.684078999999997,"country":"France","countryCode":"11"},{"lat":49.875403,"len":2.280585999999971,"country":"France","countryCode":"11"},{"lat":-20.895633,"len":55.49484800000005,"country":"France","countryCode":"11"},{"lat":49.0784,"len":6.105800000000045,"country":"France","countryCode":"11"},{"lat":45.882,"len":6.0959100000000035,"country":"France","countryCode":"11"},{"lat":45.158558,"len":5.713696000000027,"country":"France","countryCode":"11"},{"lat":45.890479,"len":1.2767920000000004,"country":"France","countryCode":"11"},{"lat":45.75435,"len":3.140800000000013,"country":"France","countryCode":"11"},{"lat":43.581518,"len":3.8643560000000434,"country":"France","countryCode":"11"},{"lat":42.69095,"len":2.922450000000026,"country":"France","countryCode":"11"},{"lat":43.121174,"len":5.8473619999999755,"country":"France","countryCode":"11"},{"lat":48.777517,"len":2.61242900000002,"country":"France","countryCode":"11"},{"lat":45.942354,"len":5.3305520000000115,"country":"France","countryCode":"11"},{"lat":43.46346,"len":-1.54357600000003,"country":"France","countryCode":"11"},{"lat":44.203532,"len":0.6251540000000659,"country":"France","countryCode":"11"},{"lat":48.1031,"len":-1.7382299999999304,"country":"France","countryCode":"11"},{"lat":47.22602,"len":5.969010000000026,"country":"France","countryCode":"11"},{"lat":47.095339,"len":2.41909899999996,"country":"France","countryCode":"11"},{"lat":48.738623,"len":1.9091469999999617,"country":"France","countryCode":"11"},{"lat":47.34313,"len":5.067099999999982,"country":"France","countryCode":"11"},{"lat":46.175284,"len":-1.1117010000000391,"country":"France","countryCode":"11"},{"lat":50.552976,"len":3.0529129999999896,"country":"France","countryCode":"11"},{"lat":45.80879,"len":4.7711100000000215,"country":"France","countryCode":"11"},{"lat":46.225977,"len":-0.12950399999999718,"country":"France","countryCode":"11"},{"lat":48.64644,"len":2.2705399999999827,"country":"France","countryCode":"11"},{"lat":47.78819,"len":7.301983999999948,"country":"France","countryCode":"11"},{"lat":47.254254,"len":-1.6182599999999638,"country":"France","countryCode":"11"},{"lat":43.853172,"len":4.400974000000019,"country":"France","countryCode":"11"},{"lat":47.847842,"len":1.9130340000000388,"country":"France","countryCode":"11"},{"lat":43.959466,"len":4.730156999999963,"country":"France","countryCode":"11"},{"lat":47.996387,"len":-4.027386999999976,"country":"France","countryCode":"11"},{"lat":49.236474,"len":4.0856189999999515,"country":"France","countryCode":"11"},{"lat":49.457409,"len":1.0555510000000368,"country":"France","countryCode":"11"},{"lat":49.242742,"len":2.4724879999999985,"country":"France","countryCode":"11"},{"lat":45.415912,"len":4.405900999999972,"country":"France","countryCode":"11"},{"lat":48.637,"len":7.725999999999999,"country":"France","countryCode":"11"},{"lat":43.562529,"len":1.5232799999999997,"country":"France","countryCode":"11"},{"lat":47.36862,"len":0.7344699999999875,"country":"France","countryCode":"11"},{"lat":47.960528,"len":0.21114299999999275,"country":"France","countryCode":"11"},{"lat":48.2,"len":5.963999999999942,"country":"France","countryCode":"11"},{"lat":44.827402,"len":-0.6709379999999783,"country":"France","countryCode":"11"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":51.36253,"len":9.387460000000033,"country":"Germany","countryCode":"12"},{"lat":52.56295,"len":13.460149999999999,"country":"Germany","countryCode":"12"},{"lat":51.977444,"len":8.477993999999967,"country":"Germany","countryCode":"12"},{"lat":50.27426,"len":10.974539999999934,"country":"Germany","countryCode":"12"},{"lat":53.5377,"len":10.066839999999956,"country":"Germany","countryCode":"12"},{"lat":51.487657,"len":7.554033000000004,"country":"Germany","countryCode":"12"},{"lat":48.67664,"len":9.208190000000059,"country":"Germany","countryCode":"12"},{"lat":50.294564,"len":8.685333000000014,"country":"Germany","countryCode":"12"},{"lat":53.591343,"len":9.825244999999995,"country":"Germany","countryCode":"12"},{"lat":46.631347,"len":13.827530000000024,"country":"Germany","countryCode":"12"},{"lat":48.18779,"len":11.566299999999956,"country":"Germany","countryCode":"12"},{"lat":51.911183,"len":7.6859530000000404,"country":"Germany","countryCode":"12"},{"lat":51.68494,"len":6.143320000000017,"country":"Germany","countryCode":"12"},{"lat":46.805618,"len":15.566134000000034,"country":"Germany","countryCode":"12"},{"lat":48.83259,"len":10.087710000000015,"country":"Germany","countryCode":"12"},{"lat":47.610514,"len":9.897874000000002,"country":"Germany","countryCode":"12"},{"lat":48.31393,"len":10.888720000000035,"country":"Germany","countryCode":"12"},{"lat":49.84902,"len":7.887410000000045,"country":"Germany","countryCode":"12"},{"lat":50.76229,"len":7.122366000000056,"country":"Germany","countryCode":"12"},{"lat":48.180268,"len":12.965333999999984,"country":"Germany","countryCode":"12"},{"lat":52.25393,"len":10.552090000000021,"country":"Germany","countryCode":"12"},{"lat":52.9046,"len":8.87869999999998,"country":"Germany","countryCode":"12"},{"lat":49.20264,"len":12.668069999999943,"country":"Germany","countryCode":"12"},{"lat":50.863486,"len":12.85345099999995,"country":"Germany","countryCode":"12"},{"lat":47.626422,"len":7.610120000000052,"country":"Germany","countryCode":"12"},{"lat":51.081191,"len":13.760739000000058,"country":"Germany","countryCode":"12"},{"lat":51.222408,"len":6.8253819999999905,"country":"Germany","countryCode":"12"},{"lat":52.481297,"len":7.20688999999993,"country":"Germany","countryCode":"12"},{"lat":50.973407,"len":11.050817000000052,"country":"Germany","countryCode":"12"},{"lat":52.37596,"len":14.070590000000038,"country":"Germany","countryCode":"12"},{"lat":50.85033,"len":12.072260000000028,"country":"Germany","countryCode":"12"},{"lat":52.44662,"len":9.612070000000017,"country":"Germany","countryCode":"12"},{"lat":50.93329,"len":7.193724999999972,"country":"Germany","countryCode":"12"},{"lat":51.31793,"len":12.394310000000019,"country":"Germany","countryCode":"12"},{"lat":53.86702,"len":10.613370000000032,"country":"Germany","countryCode":"12"},{"lat":52.165714,"len":11.608707999999979,"country":"Germany","countryCode":"12"},{"lat":50.14711,"len":8.950749999999971,"country":"Germany","countryCode":"12"},{"lat":49.448478,"len":8.50473199999999,"country":"Germany","countryCode":"12"},{"lat":47.765236,"len":11.360738999999967,"country":"Germany","countryCode":"12"},{"lat":48.4739,"len":9.25981999999999,"country":"Germany","countryCode":"12"},{"lat":49.346025,"len":7.1592580000000225,"country":"Germany","countryCode":"12"},{"lat":48.74461,"len":13.749040000000036,"country":"Germany","countryCode":"12"},{"lat":48.15953,"len":15.10591999999997,"country":"Germany","countryCode":"12"},{"lat":49.44875,"len":10.992271999999957,"country":"Germany","countryCode":"12"},{"lat":52.24043,"len":8.139459999999985,"country":"Germany","countryCode":"12"},{"lat":47.381156,"len":15.67806799999994,"country":"Germany","countryCode":"12"},{"lat":51.72838,"len":8.794380000000046,"country":"Germany","countryCode":"12"},{"lat":49.031219,"len":12.128105000000005,"country":"Germany","countryCode":"12"},{"lat":49.66232,"len":8.258199999999988,"country":"Germany","countryCode":"12"},{"lat":49.24544,"len":8.883270000000039,"country":"Germany","countryCode":"12"},{"lat":54.0926,"len":12.110199999999963,"country":"Germany","countryCode":"12"},{"lat":48.112962,"len":8.616218000000003,"country":"Germany","countryCode":"12"},{"lat":47.80856,"len":10.873460000000023,"country":"Germany","countryCode":"12"},{"lat":50.88824,"len":8.025719999999978,"country":"Germany","countryCode":"12"},{"lat":48.266348,"len":7.814299000000005,"country":"Germany","countryCode":"12"},{"lat":47.303295,"len":11.63562300000001,"country":"Germany","countryCode":"12"},{"lat":48.193992,"len":16.333354999999983,"country":"Germany","countryCode":"12"},{"lat":48.276029,"len":16.38837000000001,"country":"Germany","countryCode":"12"},{"lat":50.703,"len":12.446500000000015,"country":"Germany","countryCode":"12"},{"lat":49.78742,"len":9.94344000000001,"country":"Germany","countryCode":"12"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":38.263911,"len":21.74436800000001,"country":"Greece","countryCode":"13"},{"lat":35.892944,"len":14.47653600000001,"country":"Greece","countryCode":"13"},{"lat":37.966446,"len":23.730856000000017,"country":"Greece","countryCode":"13"},{"lat":37.999638,"len":23.75249400000007,"country":"Greece","countryCode":"13"},{"lat":35.504728,"len":24.019792000000052,"country":"Greece","countryCode":"13"},{"lat":40.615746,"len":22.96313800000007,"country":"Greece","countryCode":"13"},{"lat":37.967009,"len":23.733641000000034,"country":"Greece","countryCode":"13"},{"lat":42.706881,"len":23.454226000000062,"country":"Greece","countryCode":"13"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":0,"len":0,"country":"Guatemala","countryCode":"14"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":0,"len":0,"country":"Hungary","countryCode":"16"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":18.539693,"len":73.80636000000004,"country":"India","countryCode":"18"},{"lat":13.06493,"len":80.25809400000003,"country":"India","countryCode":"18"},{"lat":22.752211,"len":75.90435500000001,"country":"India","countryCode":"18"},{"lat":12.859434,"len":74.87575200000003,"country":"India","countryCode":"18"},{"lat":30.692051,"len":76.79107099999999,"country":"India","countryCode":"18"},{"lat":12.968342,"len":77.60056299999997,"country":"India","countryCode":"18"},{"lat":17.41191,"len":78.43317000000002,"country":"India","countryCode":"18"},{"lat":19.017614,"len":72.85616400000004,"country":"India","countryCode":"18"},{"lat":16.498973,"len":80.65211399999998,"country":"India","countryCode":"18"},{"lat":26.850667,"len":75.79427899999996,"country":"India","countryCode":"18"},{"lat":22.54987,"len":88.39186999999993,"country":"India","countryCode":"18"},{"lat":28.555376,"len":77.24199399999998,"country":"India","countryCode":"18"},{"lat":28.468309,"len":77.08349999999996,"country":"India","countryCode":"18"},{"lat":23.04996,"len":72.50202000000002,"country":"India","countryCode":"18"},{"lat":9.971389,"len":76.31755999999996,"country":"India","countryCode":"18"},{"lat":20.332834,"len":85.88340500000004,"country":"India","countryCode":"18"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":-6.258738,"len":106.81539099999998,"country":"Indonesia","countryCode":"19"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":39.656069,"len":16.513701999999967,"country":"Italy","countryCode":"20"},{"lat":45.036756,"len":11.78120100000001,"country":"Italy","countryCode":"20"},{"lat":44.399837,"len":8.947647999999958,"country":"Italy","countryCode":"20"},{"lat":45.283342,"len":9.53624000000002,"country":"Italy","countryCode":"20"},{"lat":44.49594,"len":11.39064200000007,"country":"Italy","countryCode":"20"},{"lat":42.454176,"len":12.10612500000002,"country":"Italy","countryCode":"20"},{"lat":45.876072,"len":12.295188000000053,"country":"Italy","countryCode":"20"},{"lat":45.036867,"len":9.70617900000002,"country":"Italy","countryCode":"20"},{"lat":43.770521,"len":11.203758999999991,"country":"Italy","countryCode":"20"},{"lat":43.911319,"len":12.901161000000002,"country":"Italy","countryCode":"20"},{"lat":43.10038,"len":12.317862999999988,"country":"Italy","countryCode":"20"},{"lat":40.562395,"len":8.323319999999967,"country":"Italy","countryCode":"20"},{"lat":41.941118,"len":12.461610999999948,"country":"Italy","countryCode":"20"},{"lat":40.649974,"len":14.823943999999983,"country":"Italy","countryCode":"20"},{"lat":45.204243,"len":9.171095000000037,"country":"Italy","countryCode":"20"},{"lat":44.534541,"len":7.938040999999998,"country":"Italy","countryCode":"20"},{"lat":45.43798697,"len":9.228767749999975,"country":"Italy","countryCode":"20"},{"lat":42.498064,"len":14.168673000000013,"country":"Italy","countryCode":"20"},{"lat":43.559558,"len":13.510351000000014,"country":"Italy","countryCode":"20"},{"lat":45.666478,"len":9.663655999999946,"country":"Italy","countryCode":"20"},{"lat":45.520376,"len":10.27554299999997,"country":"Italy","countryCode":"20"},{"lat":45.657308,"len":9.253364000000033,"country":"Italy","countryCode":"20"},{"lat":40.847325,"len":14.281383000000005,"country":"Italy","countryCode":"20"},{"lat":45.856349,"len":13.426645000000008,"country":"Italy","countryCode":"20"},{"lat":41.472517,"len":12.902765999999929,"country":"Italy","countryCode":"20"},{"lat":43.814781,"len":10.48741599999994,"country":"Italy","countryCode":"20"},{"lat":40.826977,"len":14.154494,"country":"Italy","countryCode":"20"},{"lat":45.4826,"len":11.903980000000047,"country":"Italy","countryCode":"20"},{"lat":44.826415,"len":10.204770000000053,"country":"Italy","countryCode":"20"},{"lat":41.074948,"len":16.597631999999976,"country":"Italy","countryCode":"20"},{"lat":44.713616,"len":10.607579999999984,"country":"Italy","countryCode":"20"},{"lat":41.886688,"len":12.613662999999974,"country":"Italy","countryCode":"20"},{"lat":45.5468,"len":9.236106000000063,"country":"Italy","countryCode":"20"},{"lat":37.528488,"len":15.09069199999999,"country":"Italy","countryCode":"20"},{"lat":38.13924,"len":13.347960000000057,"country":"Italy","countryCode":"20"},{"lat":45.107735,"len":7.666637000000037,"country":"Italy","countryCode":"20"},{"lat":45.686786,"len":8.800072999999998,"country":"Italy","countryCode":"20"},{"lat":45.419273,"len":10.98897599999998,"country":"Italy","countryCode":"20"},{"lat":45.5189515,"len":11.565530699999954,"country":"Italy","countryCode":"20"},{"lat":44.304186,"len":8.47862699999996,"country":"Italy","countryCode":"20"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":43.03242,"len":141.34427900000003,"country":"Japan","countryCode":"21"},{"lat":38.333469,"len":140.89044,"country":"Japan","countryCode":"21"},{"lat":37.451437,"len":138.80474800000002,"country":"Japan","countryCode":"21"},{"lat":36.543944,"len":139.893281,"country":"Japan","countryCode":"21"},{"lat":36.382255,"len":139.04116699999997,"country":"Japan","countryCode":"21"},{"lat":36.336539,"len":140.44167300000004,"country":"Japan","countryCode":"21"},{"lat":35.865535,"len":139.60689200000002,"country":"Japan","countryCode":"21"},{"lat":35.854057,"len":139.807865,"country":"Japan","countryCode":"21"},{"lat":35.702383,"len":139.59016199999996,"country":"Japan","countryCode":"21"},{"lat":35.685015,"len":139.47936200000004,"country":"Japan","countryCode":"21"},{"lat":35.593058,"len":140.13614600000005,"country":"Japan","countryCode":"21"},{"lat":35.573557,"len":139.36482999999998,"country":"Japan","countryCode":"21"},{"lat":35.542129,"len":139.56915400000003,"country":"Japan","countryCode":"21"},{"lat":35.441388,"len":139.658141,"country":"Japan","countryCode":"21"},{"lat":35.228781,"len":136.24388,"country":"Japan","countryCode":"21"},{"lat":35.104693,"len":137.05392699999993,"country":"Japan","countryCode":"21"},{"lat":35.070797,"len":137.17762600000003,"country":"Japan","countryCode":"21"},{"lat":34.894808,"len":135.68424200000004,"country":"Japan","countryCode":"21"},{"lat":34.734905,"len":137.78893400000004,"country":"Japan","countryCode":"21"},{"lat":34.727224,"len":135.28843299999994,"country":"Japan","countryCode":"21"},{"lat":34.708703,"len":135.536073,"country":"Japan","countryCode":"21"},{"lat":34.436673,"len":132.470462,"country":"Japan","countryCode":"21"},{"lat":34.313702,"len":134.082493,"country":"Japan","countryCode":"21"},{"lat":33.631619,"len":130.43729899999994,"country":"Japan","countryCode":"21"},{"lat":26.266925,"len":127.72094400000003,"country":"Japan","countryCode":"21"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":19.052169,"len":-98.23798499999998,"country":"Mexico","countryCode":"22"},{"lat":19.160749,"len":-100.123018,"country":"Mexico","countryCode":"22"},{"lat":21.150063,"len":101.707852,"country":"Mexico","countryCode":"22"},{"lat":19.4107,"len":-99.18329299999999,"country":"Mexico","countryCode":"22"},{"lat":25.626471,"len":-100.29419000000001,"country":"Mexico","countryCode":"22"},{"lat":19.502906,"len":-99.23951399999999,"country":"Mexico","countryCode":"22"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":52.142338,"len":5.426195000000007,"country":"Netherlands","countryCode":"23"},{"lat":52.070208,"len":4.744441999999935,"country":"Netherlands","countryCode":"23"},{"lat":51.710238,"len":5.339805999999953,"country":"Netherlands","countryCode":"23"},{"lat":51.491752,"len":3.8761349999999766,"country":"Netherlands","countryCode":"23"},{"lat":52.093799,"len":6.649775999999974,"country":"Netherlands","countryCode":"23"},{"lat":51.576113,"len":4.932268000000022,"country":"Netherlands","countryCode":"23"},{"lat":52.704035,"len":4.800750999999991,"country":"Netherlands","countryCode":"23"},{"lat":52.204096,"len":4.879924999999957,"country":"Netherlands","countryCode":"23"},{"lat":53.246548,"len":6.576196999999979,"country":"Netherlands","countryCode":"23"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":-37.690346,"len":176.164265,"country":"New Zealand","countryCode":"24"},{"lat":-43.53629,"len":172.63266,"country":"New Zealand","countryCode":"24"},{"lat":-40.339217,"len":175.71739200000002,"country":"New Zealand","countryCode":"24"},{"lat":-36.873967,"len":174.73552199999995,"country":"New Zealand","countryCode":"24"},{"lat":-41.300452,"len":173.241265,"country":"New Zealand","countryCode":"24"},{"lat":-37.763506,"len":175.25240499999995,"country":"New Zealand","countryCode":"24"},{"lat":-36.794144,"len":174.764272,"country":"New Zealand","countryCode":"24"},{"lat":-46.422207,"len":168.34706499999993,"country":"New Zealand","countryCode":"24"},{"lat":-39.057893,"len":174.081321,"country":"New Zealand","countryCode":"24"},{"lat":-41.217756,"len":174.88962400000003,"country":"New Zealand","countryCode":"24"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":59.26687,"len":11.14299200000005,"country":"Norway","countryCode":"25"},{"lat":58.873068,"len":5.723584999999957,"country":"Norway","countryCode":"25"},{"lat":59.217655,"len":9.606167000000028,"country":"Norway","countryCode":"25"},{"lat":63.34857,"len":10.376445999999987,"country":"Norway","countryCode":"25"},{"lat":60.46809,"len":5.33503799999994,"country":"Norway","countryCode":"25"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":0,"len":0,"country":"Panama","countryCode":"26"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":0,"len":0,"country":"Peru","countryCode":"27"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":54.393297,"len":18.58160900000007,"country":"Poland","countryCode":"28"},{"lat":52.91719,"len":18.139124000000038,"country":"Poland","countryCode":"28"},{"lat":59.401026,"len":24.645782000000054,"country":"Poland","countryCode":"28"},{"lat":52.195112,"len":20.926146000000017,"country":"Poland","countryCode":"28"},{"lat":54.393274,"len":18.58149400000002,"country":"Poland","countryCode":"28"},{"lat":50.264351,"len":19.00574800000004,"country":"Poland","countryCode":"28"},{"lat":52.421752,"len":16.87174099999993,"country":"Poland","countryCode":"28"},{"lat":56.989681,"len":24.228931999999986,"country":"Poland","countryCode":"28"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":38.744108,"len":-9.134053999999992,"country":"Portugal","countryCode":"29"},{"lat":41.155048,"len":-8.609990000000039,"country":"Portugal","countryCode":"29"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":0,"len":0,"country":"Puerto Rico","countryCode":"30"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":0,"len":0,"country":"Qatar","countryCode":"31"},{"lat":0,"len":0,"country":"Qatar","countryCode":"31"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":0,"len":0,"country":"Singapore","countryCode":"32"},{"lat":1.326309,"len":103.86659099999997,"country":"Singapore","countryCode":"32"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":-26.087644,"len":28.07568900000001,"country":"South Africa","countryCode":"33"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":41.57282,"len":0.5082340000000158,"country":"Spain","countryCode":"34"},{"lat":41.648415,"len":-0.8967099999999846,"country":"Spain","countryCode":"34"},{"lat":28.161062,"len":-15.412007000000017,"country":"Spain","countryCode":"34"},{"lat":28.463372,"len":-16.290302999999994,"country":"Spain","countryCode":"34"},{"lat":41.38671,"len":2.1355100000000675,"country":"Spain","countryCode":"34"},{"lat":37.186764,"len":-3.614428999999973,"country":"Spain","countryCode":"34"},{"lat":41.397339,"len":2.1645690000000286,"country":"Spain","countryCode":"34"},{"lat":41.150503,"len":1.1132939999999962,"country":"Spain","countryCode":"34"},{"lat":37.253414,"len":-6.935910000000035,"country":"Spain","countryCode":"34"},{"lat":43.285664,"len":-3.001170000000002,"country":"Spain","countryCode":"34"},{"lat":37.367789,"len":-5.954752999999982,"country":"Spain","countryCode":"34"},{"lat":37.957734,"len":-1.1178499999999758,"country":"Spain","countryCode":"34"},{"lat":43.352411,"len":-8.42230799999993,"country":"Spain","countryCode":"34"},{"lat":38.345022,"len":-0.5215719999999919,"country":"Spain","countryCode":"34"},{"lat":43.367737,"len":-5.761582999999973,"country":"Spain","countryCode":"34"},{"lat":36.60093,"len":-6.222396000000003,"country":"Spain","countryCode":"34"},{"lat":40.438625,"len":-3.703700000000026,"country":"Spain","countryCode":"34"},{"lat":36.509675,"len":-4.896443999999974,"country":"Spain","countryCode":"34"},{"lat":39.581881,"len":2.671077999999966,"country":"Spain","countryCode":"34"},{"lat":39.459406,"len":-0.3707890000000589,"country":"Spain","countryCode":"34"},{"lat":41.583493,"len":-4.718820000000051,"country":"Spain","countryCode":"34"},{"lat":42.21306,"len":-8.734230000000025,"country":"Spain","countryCode":"34"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":59.26687,"len":11.14299200000005,"country":"Scandinavia","countryCode":"35"},{"lat":56.665641,"len":16.33091300000001,"country":"Scandinavia","countryCode":"35"},{"lat":59.930536,"len":10.78218000000004,"country":"Scandinavia","countryCode":"35"},{"lat":58.873068,"len":5.723584999999957,"country":"Scandinavia","countryCode":"35"},{"lat":60.493545,"len":22.19822099999999,"country":"Scandinavia","countryCode":"35"},{"lat":61.458484,"len":23.728859000000057,"country":"Scandinavia","countryCode":"35"},{"lat":60.294405,"len":24.950423,"country":"Scandinavia","countryCode":"35"},{"lat":59.217655,"len":9.606167000000028,"country":"Scandinavia","countryCode":"35"},{"lat":59.380931,"len":13.534931000000029,"country":"Scandinavia","countryCode":"35"},{"lat":55.767101,"len":12.99944400000004,"country":"Scandinavia","countryCode":"35"},{"lat":57.773213,"len":11.99376600000005,"country":"Scandinavia","countryCode":"35"},{"lat":65.6079,"len":22.044276999999965,"country":"Scandinavia","countryCode":"35"},{"lat":60.657536,"len":17.17158799999993,"country":"Scandinavia","countryCode":"35"},{"lat":63.34857,"len":10.376445999999987,"country":"Scandinavia","countryCode":"35"},{"lat":58.503031,"len":13.167721000000029,"country":"Scandinavia","countryCode":"35"},{"lat":62.807947,"len":22.871501999999964,"country":"Scandinavia","countryCode":"35"},{"lat":62.412421,"len":17.335298999999964,"country":"Scandinavia","countryCode":"35"},{"lat":63.851394,"len":20.307154999999966,"country":"Scandinavia","countryCode":"35"},{"lat":59.436223,"len":17.932661000000053,"country":"Scandinavia","countryCode":"35"},{"lat":55.614571,"len":12.614836999999966,"country":"Scandinavia","countryCode":"35"},{"lat":57.283218,"len":13.644630000000006,"country":"Scandinavia","countryCode":"35"},{"lat":60.46809,"len":5.33503799999994,"country":"Scandinavia","countryCode":"35"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":47.001629,"len":6.951477999999952,"country":"Switzerland","countryCode":"36"},{"lat":47.382268,"len":8.53746799999999,"country":"Switzerland","countryCode":"36"},{"lat":47.2361,"len":8.914510000000064,"country":"Switzerland","countryCode":"36"},{"lat":46.950281,"len":7.485948000000008,"country":"Switzerland","countryCode":"36"},{"lat":46.310158,"len":7.974430999999981,"country":"Switzerland","countryCode":"36"},{"lat":47.139007,"len":7.963774000000058,"country":"Switzerland","countryCode":"36"},{"lat":46.576152,"len":6.632656999999995,"country":"Switzerland","countryCode":"36"},{"lat":47.510605,"len":8.517725000000041,"country":"Switzerland","countryCode":"36"},{"lat":47.36169,"len":8.266530999999986,"country":"Switzerland","countryCode":"36"},{"lat":46.617825,"len":7.024568000000045,"country":"Switzerland","countryCode":"36"},{"lat":47.538734,"len":7.603193000000033,"country":"Switzerland","countryCode":"36"},{"lat":47.399772,"len":9.638402000000042,"country":"Switzerland","countryCode":"36"},{"lat":47.562416,"len":8.907145000000014,"country":"Switzerland","countryCode":"36"},{"lat":46.201889,"len":6.131481000000008,"country":"Switzerland","countryCode":"36"},{"lat":46.048468,"len":8.926196000000004,"country":"Switzerland","countryCode":"36"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":0,"len":0,"country":"Taiwan","countryCode":"37"},{"lat":0,"len":0,"country":"Taiwan","countryCode":"37"},{"lat":0,"len":0,"country":"Taiwan","countryCode":"37"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":53.954686,"len":-1.0671839999999975,"country":"UK","countryCode":"38"},{"lat":51.466618,"len":-3.2025039999999763,"country":"UK","countryCode":"38"},{"lat":53.191766,"len":-2.8695259999999507,"country":"UK","countryCode":"38"},{"lat":49.187222,"len":-2.106353000000013,"country":"UK","countryCode":"38"},{"lat":50.702188,"len":-3.533649999999966,"country":"UK","countryCode":"38"},{"lat":51.423725,"len":-0.8660099999999602,"country":"UK","countryCode":"38"},{"lat":51.348292,"len":-0.09406999999998789,"country":"UK","countryCode":"38"},{"lat":54.893971,"len":-2.9480599999999413,"country":"UK","countryCode":"38"},{"lat":50.692376,"len":-1.31570499999998,"country":"UK","countryCode":"38"},{"lat":51.18709,"len":-0.5494630000000598,"country":"UK","countryCode":"38"},{"lat":50.908707,"len":-0.40584000000001197,"country":"UK","countryCode":"38"},{"lat":50.91422,"len":-1.1705349999999726,"country":"UK","countryCode":"38"},{"lat":55.931226,"len":-3.156564000000003,"country":"UK","countryCode":"38"},{"lat":51.446578,"len":-2.58150999999998,"country":"UK","countryCode":"38"},{"lat":51.417495,"len":-0.4440399999999727,"country":"UK","countryCode":"38"},{"lat":54.093104,"len":-4.628293999999983,"country":"UK","countryCode":"38"},{"lat":50.853676,"len":0.5582910000000538,"country":"UK","countryCode":"38"},{"lat":51.267235,"len":0.5146130000000539,"country":"UK","countryCode":"38"},{"lat":51.118448,"len":0.857874000000038,"country":"UK","countryCode":"38"},{"lat":52.571432,"len":0.8202539999999772,"country":"UK","countryCode":"38"},{"lat":51.895056,"len":-2.1054900000000316,"country":"UK","countryCode":"38"},{"lat":52.196774,"len":-1.713320000000067,"country":"UK","countryCode":"38"},{"lat":51.574763,"len":-1.7664009999999735,"country":"UK","countryCode":"38"},{"lat":52.544274,"len":-0.23821799999996074,"country":"UK","countryCode":"38"},{"lat":54.503894,"len":-6.101440000000025,"country":"UK","countryCode":"38"},{"lat":52.887,"len":-1.2836999999999534,"country":"UK","countryCode":"38"},{"lat":52.295607,"len":-0.6763899999999694,"country":"UK","countryCode":"38"},{"lat":51.985745,"len":-0.6172149999999874,"country":"UK","countryCode":"38"},{"lat":57.143155,"len":-2.102300000000014,"country":"UK","countryCode":"38"},{"lat":53.067631,"len":-2.2160519999999906,"country":"UK","countryCode":"38"},{"lat":52.052279,"len":1.2119290000000547,"country":"UK","countryCode":"38"},{"lat":53.489615,"len":-1.2370069999999487,"country":"UK","countryCode":"38"},{"lat":50.843485,"len":-1.8650299999999334,"country":"UK","countryCode":"38"},{"lat":50.99347,"len":-3.1745449999999664,"country":"UK","countryCode":"38"},{"lat":52.61034,"len":-1.6762099999999691,"country":"UK","countryCode":"38"},{"lat":52.456753,"len":-2.047631000000024,"country":"UK","countryCode":"38"},{"lat":51.574427,"len":0.16270800000006602,"country":"UK","countryCode":"38"},{"lat":51.862631,"len":0.37499000000002525,"country":"UK","countryCode":"38"},{"lat":55.865366,"len":-4.373161999999979,"country":"UK","countryCode":"38"},{"lat":51.487689,"len":-0.12207899999998517,"country":"UK","countryCode":"38"},{"lat":54.9648,"len":-1.6256200000000263,"country":"UK","countryCode":"38"},{"lat":51.647602,"len":-0.4179219999999759,"country":"UK","countryCode":"38"},{"lat":51.7006,"len":-1.3006000000000313,"country":"UK","countryCode":"38"},{"lat":50.385896,"len":-4.020269999999982,"country":"UK","countryCode":"38"},{"lat":53.834777,"len":-1.7798990000000003,"country":"UK","countryCode":"38"},{"lat":53.262141,"len":-1.431210999999962,"country":"UK","countryCode":"38"},{"lat":53.223186,"len":-0.5367959999999812,"country":"UK","countryCode":"38"},{"lat":53.286692,"len":-3.579939999999965,"country":"UK","countryCode":"38"},{"lat":53.748019,"len":-2.467399999999998,"country":"UK","countryCode":"38"},{"lat":53.495609,"len":-2.2516769999999724,"country":"UK","countryCode":"38"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+        JSON.parse(
+          '[{"lat":38.72486,"len":-121.288567,"country":"USA","countryCode":"39"},{"lat":37.972471,"len":-122.04556100000002,"country":"USA","countryCode":"39"},{"lat":41.451403,"len":-95.11339599999997,"country":"USA","countryCode":"39"},{"lat":44.623636,"len":-93.75176199999999,"country":"USA","countryCode":"39"},{"lat":34.10047,"len":-117.90778,"country":"USA","countryCode":"39"},{"lat":37.693193,"len":-97.32385099999999,"country":"USA","countryCode":"39"},{"lat":41.396816,"len":-74.37370099999998,"country":"USA","countryCode":"39"},{"lat":29.656843,"len":-95.24418700000001,"country":"USA","countryCode":"39"},{"lat":45.487311,"len":-122.81821100000002,"country":"USA","countryCode":"39"},{"lat":36.309732,"len":-86.67667,"country":"USA","countryCode":"39"},{"lat":32.788278,"len":-80.025508,"country":"USA","countryCode":"39"},{"lat":38.252502,"len":-85.74106799999998,"country":"USA","countryCode":"39"},{"lat":43.18784,"len":-71.48060700000002,"country":"USA","countryCode":"39"},{"lat":21.299317,"len":-157.85274500000003,"country":"USA","countryCode":"39"},{"lat":37.625943,"len":-121.03047100000003,"country":"USA","countryCode":"39"},{"lat":42.571723,"len":-70.87512900000002,"country":"USA","countryCode":"39"},{"lat":30.313929,"len":-81.57078100000001,"country":"USA","countryCode":"39"},{"lat":30.438535,"len":-87.26040599999999,"country":"USA","countryCode":"39"},{"lat":32.595729,"len":-117.02676099999996,"country":"USA","countryCode":"39"},{"lat":33.816966,"len":-118.167912,"country":"USA","countryCode":"39"},{"lat":41.294059,"len":-96.187795,"country":"USA","countryCode":"39"},{"lat":38.722937,"len":-90.37303600000001,"country":"USA","countryCode":"39"},{"lat":34.106054,"len":-117.30124799999999,"country":"USA","countryCode":"39"},{"lat":38.379357,"len":-121.35854,"country":"USA","countryCode":"39"},{"lat":39.093727,"len":-94.50487399999997,"country":"USA","countryCode":"39"},{"lat":39.761833,"len":-104.982888,"country":"USA","countryCode":"39"},{"lat":33.011528,"len":-96.69883199999998,"country":"USA","countryCode":"39"},{"lat":32.767278,"len":-97.30246999999997,"country":"USA","countryCode":"39"},{"lat":35.460922,"len":-97.591631,"country":"USA","countryCode":"39"},{"lat":30.485401,"len":-84.23629699999998,"country":"USA","countryCode":"39"},{"lat":27.16783,"len":-80.22597000000002,"country":"USA","countryCode":"39"},{"lat":39.738961,"len":-105.08196700000002,"country":"USA","countryCode":"39"},{"lat":42.882886,"len":-85.68269499999997,"country":"USA","countryCode":"39"},{"lat":35.379416,"len":-119.01919099999998,"country":"USA","countryCode":"39"},{"lat":39.39135,"len":-77.40585299999998,"country":"USA","countryCode":"39"},{"lat":33.751263,"len":-84.740791,"country":"USA","countryCode":"39"},{"lat":40.602093,"len":-79.756709,"country":"USA","countryCode":"39"},{"lat":33.628264,"len":-111.89628800000003,"country":"USA","countryCode":"39"},{"lat":33.63708,"len":-112.23526400000003,"country":"USA","countryCode":"39"},{"lat":40.736383,"len":-73.672144,"country":"USA","countryCode":"39"},{"lat":32.407221,"len":-90.142203,"country":"USA","countryCode":"39"},{"lat":42.61298,"len":-72.54880000000003,"country":"USA","countryCode":"39"},{"lat":40.580891,"len":-76.02419199999997,"country":"USA","countryCode":"39"},{"lat":47.536104,"len":-122.03347400000001,"country":"USA","countryCode":"39"},{"lat":36.54315,"len":-82.55808200000001,"country":"USA","countryCode":"39"},{"lat":39.143872,"len":-75.51769100000001,"country":"USA","countryCode":"39"},{"lat":45.383687,"len":-122.581006,"country":"USA","countryCode":"39"},{"lat":38.017465,"len":-84.40983499999999,"country":"USA","countryCode":"39"},{"lat":41.293452,"len":-72.94897800000001,"country":"USA","countryCode":"39"},{"lat":41.101976,"len":-74.14737200000002,"country":"USA","countryCode":"39"},{"lat":32.335036,"len":-95.26745,"country":"USA","countryCode":"39"},{"lat":37.965154,"len":-122.51356099999998,"country":"USA","countryCode":"39"},{"lat":42.02279,"len":-72.58586000000003,"country":"USA","countryCode":"39"},{"lat":40.352947,"len":-75.63138800000002,"country":"USA","countryCode":"39"},{"lat":40.924116,"len":-72.70181600000001,"country":"USA","countryCode":"39"},{"lat":45.300615,"len":-93.81352099999998,"country":"USA","countryCode":"39"},{"lat":40.37118,"len":-79.78605900000002,"country":"USA","countryCode":"39"},{"lat":39.928328,"len":-82.83262100000002,"country":"USA","countryCode":"39"},{"lat":44.708295,"len":-93.283951,"country":"USA","countryCode":"39"},{"lat":41.889812,"len":-87.992257,"country":"USA","countryCode":"39"},{"lat":28.504862,"len":-82.58649400000002,"country":"USA","countryCode":"39"},{"lat":41.855607,"len":-87.68561799999998,"country":"USA","countryCode":"39"},{"lat":37.766281,"len":-122.42213300000003,"country":"USA","countryCode":"39"},{"lat":40.570943,"len":-105.00227100000001,"country":"USA","countryCode":"39"},{"lat":33.684453,"len":-117.86865599999999,"country":"USA","countryCode":"39"},{"lat":35.08357,"len":-85.20516199999997,"country":"USA","countryCode":"39"},{"lat":44.320644,"len":-69.82729,"country":"USA","countryCode":"39"},{"lat":39.361946,"len":-76.521795,"country":"USA","countryCode":"39"},{"lat":33.400196,"len":-111.83929899999998,"country":"USA","countryCode":"39"},{"lat":38.926086,"len":-104.796291,"country":"USA","countryCode":"39"},{"lat":43.202365,"len":-76.128086,"country":"USA","countryCode":"39"},{"lat":44.102431,"len":-103.15885800000001,"country":"USA","countryCode":"39"},{"lat":30.378339,"len":-97.67411400000003,"country":"USA","countryCode":"39"},{"lat":33.911652,"len":-81.53696400000001,"country":"USA","countryCode":"39"},{"lat":36.07755,"len":-79.79375600000003,"country":"USA","countryCode":"39"},{"lat":34.271405,"len":-118.73932400000001,"country":"USA","countryCode":"39"},{"lat":42.486907,"len":-90.742235,"country":"USA","countryCode":"39"},{"lat":33.925371,"len":-117.90308700000003,"country":"USA","countryCode":"39"},{"lat":41.52829,"len":-72.06234,"country":"USA","countryCode":"39"},{"lat":41.654785,"len":-93.61868600000003,"country":"USA","countryCode":"39"},{"lat":41.630156,"len":-91.56683199999998,"country":"USA","countryCode":"39"},{"lat":28.012483,"len":-82.50556899999998,"country":"USA","countryCode":"39"},{"lat":42.662759,"len":-88.95071999999999,"country":"USA","countryCode":"39"},{"lat":44.100688,"len":-88.53863999999999,"country":"USA","countryCode":"39"},{"lat":61.154472,"len":-149.86479499999996,"country":"USA","countryCode":"39"},{"lat":34.177957,"len":-118.85694799999999,"country":"USA","countryCode":"39"},{"lat":34.84353,"len":-82.36292000000003,"country":"USA","countryCode":"39"},{"lat":35.115778,"len":-106.70033699999999,"country":"USA","countryCode":"39"},{"lat":43.591936,"len":-116.36589500000002,"country":"USA","countryCode":"39"},{"lat":40.716812,"len":-73.962917,"country":"USA","countryCode":"39"},{"lat":34.15614,"len":-83.98882600000002,"country":"USA","countryCode":"39"},{"lat":41.452452,"len":-81.802235,"country":"USA","countryCode":"39"},{"lat":40.082978,"len":-82.92583400000001,"country":"USA","countryCode":"39"},{"lat":29.221838,"len":-81.02216799999997,"country":"USA","countryCode":"39"},{"lat":42.644438,"len":-83.03267700000004,"country":"USA","countryCode":"39"},{"lat":38.982746,"len":-77.476605,"country":"USA","countryCode":"39"},{"lat":41.704879,"len":-85.98645499999998,"country":"USA","countryCode":"39"},{"lat":33.123606,"len":-117.10479299999997,"country":"USA","countryCode":"39"},{"lat":35.023925,"len":-78.96176100000002,"country":"USA","countryCode":"39"},{"lat":26.526438,"len":-81.85550799999999,"country":"USA","countryCode":"39"},{"lat":39.76887,"len":-86.14564999999999,"country":"USA","countryCode":"39"},{"lat":38.892743,"len":-94.78734600000001,"country":"USA","countryCode":"39"},{"lat":29.785086,"len":-95.82917800000001,"country":"USA","countryCode":"39"},{"lat":35.555799,"len":-80.85287700000003,"country":"USA","countryCode":"39"},{"lat":36.143198,"len":-115.22704299999998,"country":"USA","countryCode":"39"},{"lat":40.53506,"len":-74.37393299999997,"country":"USA","countryCode":"39"},{"lat":37.279394,"len":-80.03577899999999,"country":"USA","countryCode":"39"},{"lat":29.946717,"len":-90.07443899999998,"country":"USA","countryCode":"39"},{"lat":36.91647,"len":-76.23144500000001,"country":"USA","countryCode":"39"},{"lat":38.99352,"len":-76.54511000000002,"country":"USA","countryCode":"39"},{"lat":32.642673,"len":-83.76497699999999,"country":"USA","countryCode":"39"},{"lat":40.21832,"len":-76.93707,"country":"USA","countryCode":"39"},{"lat":35.114708,"len":-80.925501,"country":"USA","countryCode":"39"},{"lat":39.16897,"len":-84.42731000000003,"country":"USA","countryCode":"39"},{"lat":38.40873,"len":-78.906657,"country":"USA","countryCode":"39"},{"lat":31.082908,"len":-97.70234299999998,"country":"USA","countryCode":"39"},{"lat":36.007756,"len":-83.99071200000003,"country":"USA","countryCode":"39"},{"lat":28.0498,"len":-81.92740300000003,"country":"USA","countryCode":"39"},{"lat":33.960223,"len":-118.37046700000002,"country":"USA","countryCode":"39"},{"lat":46.911368,"len":-114.03400999999997,"country":"USA","countryCode":"39"},{"lat":26.218826,"len":-80.13847599999997,"country":"USA","countryCode":"39"},{"lat":43.100057,"len":-77.62989600000003,"country":"USA","countryCode":"39"},{"lat":31.982422,"len":-81.15052600000001,"country":"USA","countryCode":"39"},{"lat":47.683076,"len":-122.34487999999999,"country":"USA","countryCode":"39"},{"lat":47.657405,"len":-117.29992300000004,"country":"USA","countryCode":"39"},{"lat":40.587936,"len":-111.90232300000002,"country":"USA","countryCode":"39"},{"lat":41.288537,"len":-80.84832399999999,"country":"USA","countryCode":"39"},{"lat":41.051998,"len":-73.81425999999999,"country":"USA","countryCode":"39"},{"lat":28.440119,"len":-81.427727,"country":"USA","countryCode":"39"},{"lat":37.07448,"len":-93.23139000000003,"country":"USA","countryCode":"39"},{"lat":40.020105,"len":-75.215327,"country":"USA","countryCode":"39"},{"lat":35.765382,"len":-78.64956799999999,"country":"USA","countryCode":"39"},{"lat":39.495457,"len":-119.79648299999997,"country":"USA","countryCode":"39"},{"lat":37.525771,"len":-77.44242500000001,"country":"USA","countryCode":"39"},{"lat":29.551427,"len":-98.46525500000001,"country":"USA","countryCode":"39"},{"lat":32.768489,"len":-117.19906500000002,"country":"USA","countryCode":"39"},{"lat":37.319095,"len":-121.91348199999999,"country":"USA","countryCode":"39"},{"lat":43.532954,"len":-89.98880700000001,"country":"USA","countryCode":"39"},{"lat":38.637018,"len":-90.22841299999999,"country":"USA","countryCode":"39"},{"lat":32.275305,"len":-111.01521500000001,"country":"USA","countryCode":"39"},{"lat":44.050436,"len":-73.16422899999998,"country":"USA","countryCode":"39"},{"lat":31.78218,"len":-106.41545000000002,"country":"USA","countryCode":"39"},{"lat":41.908957,"len":-88.34011800000002,"country":"USA","countryCode":"39"},{"lat":30.189389,"len":-95.450829,"country":"USA","countryCode":"39"},{"lat":42.289123,"len":-88.431219,"country":"USA","countryCode":"39"},{"lat":40.262615,"len":-74.43259899999998,"country":"USA","countryCode":"39"}]'
+        ).forEach(function (e) {
+          var marker = L.marker([e.lat, e.len], {
+            icon: greenIconTriumph,
+          }).addTo(map);
+          var POPUP = marker.bindPopup("");
+          marker.on("popupopen", onPopupOpen);
+        });
+
+        map.setZoom(2);
+      }
+    </script>
+
+    <script>
+      var de, ate, rota;
+      var markerUserCurrentLocation = null; // = L.marker([e.lat,e.len],{icon: greenIconYellow}).addTo(map);
+      var watchId = null;
+      var countMarcadoresSendoExcluido = 0;
+      var c, l;
+      //const currentPositionMarker = L.marker([0, 0]).addTo(map);
+      let currentPositionAccuracyCenter;
+      let currentPositionAccuracy;
+      // check for Geolocation support
+      if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(async function (position) {
+          const latitude = position.coords.latitude;
+          const longitude = position.coords.longitude;
+
+          // Chave de API do OpenCage Geocoder
+          const apiKey = "84eaf0ee63644a0c96d658f04121c061";
+
+          // URL da API OpenCage Geocoder
+          const apiUrl = `https://api.opencagedata.com/geocode/v1/json?key=${apiKey}&q=${latitude}+${longitude}&pretty=1&no_annotations=1`;
+          displayTimer();
+          start();
+
+          let data = await getCity(latitude, longitude);
+          // Extrair o nome da cidade a partir do objeto de resposta JSON
+          const cityName = data.city;
+          const endereco = data.address;
+          const radius = position.coords.accuracy;
+
+          divCurrentLocation.innerHTML = `localização atual >>Cidade: ${cityName} <br> endereco: ${endereco} <br> latitude:${latitude} longitude:${longitude} <br> precisão: ${radius.toFixed(
+            2
+          )} metros`;
+
+          let posicaoAtual = new L.LatLng(latitude, longitude);
+          currentPositionAccuracyCenter.setLatLng(posicaoAtual);
+          currentPositionAccuracy.setLatLng(posicaoAtual);
+          currentPositionAccuracy.setRadius(radius);
+
+          reset();
+          start();
+
+          if ($("#chkLiveTrack")[0].checked) {
+            panTo();
+          }
+        });
+
+        var map = L.map("mapid", {
+          contextmenu: true,
+          //contextmenuWidth: 140,
+          contextmenuItems: [
+            {
+              text: "Draw circle (start here)",
+              callback: addCircle,
+            },
+            {
+              text: "Draw line (start here)",
+              callback: addLine,
+            },
+            //, '-'
+            { separator: true },
+            {
+              text: "Add marker here",
+              callback: addMarcador,
+            },
+            {
+              text: "What coordinate is here?",
+              callback: showCoordinates,
+            },
+            {
+              text: "Show me all Triumph?",
+              callback: ondeTemTriumph,
+            },
+            { separator: true },
+            {
+              text: "1-From",
+              callback: tragetoriaDe,
+            },
+            {
+              text: "2-To",
+              callback: tragetoriaAte,
+            },
+            {
+              text: "N-Add to the Route end",
+              callback: adicionarAoFim,
+            },
+            {
+              text: "Show My Location",
+              callback: panTo,
+            },
+          ],
+        }).setView([0, 0], 5); //.setView([-15.628326978852627, -56.14013671875001], 8);
+
+        //const currentPositionMarker = L.marker([0, 0]).addTo(map);
+        currentPositionAccuracyCenter = L.circle([0, 0], { radius: 1 }).addTo(
+          map
+        );
+        currentPositionAccuracy = L.circle([0, 0], { radius: 0 }).addTo(map);
+
+        function panTo() {
+          map.panTo(currentPositionAccuracyCenter._latlng);
+        }
+
+        map.on("click", function (e) {
+          if (c) {
+            console.log("circulo adicionado", c, l);
+            bancoDeDados.adicionarCirculo(
+              c._leaflet_id,
+              c._latlng,
+              c._mRadius,
+              l._latlngs
+            );
+            c = null;
+            l = null;
+          } else if (l) {
+            console.log("linha adicionado", l);
+            bancoDeDados.adicionarLinha(l._leaflet_id, l._latlngs);
+            l = null;
+          }
+        });
+
+        map.on("moveend", async function () {
+          if (bancoDeDados != null) {
+            await bancoDeDados.updateActualBound(map.getBounds());
+          }
+        });
+
+        map.on("mousemove", function (e) {
+          if (c) {
+            var distance = map.distance(c.getLatLng(), e.latlng);
+            c.setRadius(distance);
+            l.setLatLngs([c.getLatLng(), e.latlng]);
+            l.setText("");
+            l.setText(new String((distance / 1000).toFixed(4)) + " Km", {
+              center: true,
+            });
+          } else if (l) {
+            var distance = map.distance(l.getLatLngs()[0], e.latlng);
+            l.setLatLngs([l.getLatLngs()[0], e.latlng]);
+            l.setText("");
+            l.setText(new String((distance / 1000).toFixed(4)) + " Km", {
+              center: true,
+            });
+          }
+        });
+
+        L.tileLayer(
+          "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}",
+          {
+            attribution:
+              'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+            maxZoom: 18,
+            id: "mapbox/streets-v11",
+            tileSize: 512,
+            zoomOffset: -1,
+            accessToken:
+              "pk.eyJ1IjoiYW5nZWxvY2FybG90dG8iLCJhIjoiY2t0azFnNHhyMWhnZTJ1cGlwOTk3amk3dyJ9.aebSrJgQ1QtBtnmMml2dHg",
+          }
+        ).addTo(map);
+      } else {
+        alert("Geolocation is not supported for this Browser/OS.");
+      }
+    </script>
+
+    <script>
+      var nomeDaChaveNoKVDB = "listaComLocalizacoes";
+      let email = "angelocarlotto@gmail.com";
+      let bancoDeDados = null;
+      var secretKVDB = null;
+      var queryString = window.location.search;
+      if (queryString) {
+        var params = new URLSearchParams(queryString);
+        if (params.has("id")) {
+          secretKVDB = params.get("id");
+        }
+      }
+      divStatus.innerHTML = "carregando dados da API";
+      //caso a hashBucket nao tenha sido informado no URL
+      if (!secretKVDB) {
+        divStatus.innerHTML += "<br><br>criando nova chave da API";
+        BancoDeDados.getNewKey(email).then(async (novaChave) => {
+          bancoDeDados = new BancoDeDados(
+            novaChave,
+            nomeDaChaveNoKVDB,
+            "angelocarlotto@gmail.com"
+          );
+          divStatus.innerHTML +=
+            "<br><br>nova chave obtida. inicializando dados.";
+          await bancoDeDados.setDados({
+            marcadores: [],
+            circulos: [],
+            linhas: [],
+            lastBound: null,
+          });
+          divStatus.innerHTML +=
+            "<br><br>dados atualizado. pode utilizar a aplicação =]";
+          var newUrl = window.location.href + "?id=" + novaChave;
+          window.history.pushState({ path: newUrl }, "", newUrl);
+          console.log("oi4");
+          atualizarMapaDuranteAInicializacao().then((dados) => {
+            map.fitWorld();
+          });
+        });
+      } else {
+        bancoDeDados = new BancoDeDados(secretKVDB, nomeDaChaveNoKVDB, email);
+        divStatus.innerHTML += "<br><br>atualizando dados";
+        atualizarMapaDuranteAInicializacao()
+          .then((dados) => {
+            divStatus.innerHTML +=
+              "<br><br>dados atualizado. pode utilizar a aplicação =]";
+
+            if (dados.lastBound) {
+              map.flyToBounds([
+                dados.lastBound._northEast,
+                dados.lastBound._southWest,
+              ]);
+            } else {
+              map.fitWorld();
+            }
+          })
+          .catch((e) => {
+            divStatus.innerHTML +=
+              "<br><br>ocorreu um erro com a chave informada. :( buscando nova chave" +
+              e;
+            BancoDeDados.getNewKey(email).then(async (novaChave) => {
+              bancoDeDados = new BancoDeDados(
+                novaChave,
+                nomeDaChaveNoKVDB,
+                "angelocarlotto@gmail.com"
+              );
+              divStatus.innerHTML +=
+                "<br><br>nova chave obtida. inicializando dados.";
+
+              await bancoDeDados.setDados({
+                marcadores: [],
+                circulos: [],
+                linhas: [],
+                lastBound: null,
+              });
+              divStatus.innerHTML +=
+                "<br><br>dados atualizado. pode utilizar a aplicação =]";
+              var newUrl =
+                window.location.href.split("?id")[0] + "?id=" + novaChave;
+              window.history.pushState({ path: newUrl }, "", newUrl);
+              atualizarMapaDuranteAInicializacao().then((dados) => {
+                map.fitWorld();
+              });
+            });
+          });
+      }
+    </script>
+  </body>
+</html>

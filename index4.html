@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Contagem de Palavras</title>
+    <meta charset="utf-8" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css"
+    />
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script
+      type="text/javascript"
+      src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+    ></script>
+  </head>
+  <body>
+    <div id="divStatus" style="font-size: 26px; color: red"></div>
+    <div id="totalPalavras" style="font-size: 26px; color: red"></div>
+    <div id="totalPalavrasConheco" style="font-size: 26px; color: red"></div>
+    <div
+      id="totalPalavrasContidasNEstaNovaLEgenda"
+      style="font-size: 26px; color: red"
+    ></div>
+    <h1>Contagem de Palavras</h1>
+    <form>
+      <label for="fileInput">Selecione um arquivo .str:</label>
+      <input type="file" id="fileInput" />
+      <br />
+      <button type="button" id="processButton">Processar</button>
+    </form>
+    <br />
+    <h2>Resultados:</h2>
+    <div>
+      <table id="resultsTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Palavra</th>
+            <th>Quantidade</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <script>
+      class BancoDeDados {
+        //Cluster42xxx
+        //acessoPeloSiteMesmoMaster
+        //6425c3532ca2d2f449e13096
+        //TSJpc8ArWLSx7M4jdYYbHC6PqM5h0ewhDsA7f6bKw56QrSaZaFxPkTpNescEHe0k
+        //https://sa-east-1.aws.data.mongodb-api.com/app/data-rwbnj/endpoint/data/v1
+        static #endPoint = "https://kvdb.io/";
+        #rashBucket;
+        #keyInTheRashBucketName;
+        #email = email;
+        #defaultObject;
+        constructor(rashBucket, keyInTheRashBucketName, email, defaultObject) {
+          this.#rashBucket = rashBucket;
+          this.#keyInTheRashBucketName = keyInTheRashBucketName;
+          this.#email = email;
+          this.#defaultObject = defaultObject;
+        }
+
+        async init() {
+          this.dados = this.#defaultObject;
+        }
+
+        static async getNewRashBucket(email) {
+          let response = await fetch(this.#endPoint, {
+            method: "post",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email }),
+          });
+          let newKey = response.text();
+          return newKey;
+        }
+
+        async #getDados() {
+          let response = await fetch(
+            BancoDeDados.#endPoint +
+              this.#rashBucket +
+              "/" +
+              this.#keyInTheRashBucketName
+          );
+          return response.json();
+        }
+
+        get dados() {
+          return this.#getDados();
+        }
+
+        set dados(valor) {
+          return this.setDados(valor);
+        }
+
+        async updatePropriedade(propriedade, valor) {
+          var dados = await this.dados;
+          dados[propriedade] = valor;
+          return (this.dados = dados);
+        }
+
+        async resetDados() {
+          return (this.dados = this.#defaultObject);
+        }
+
+        async setDados(objeto, onsuccess) {
+          try {
+            let response = fetch(
+              BancoDeDados.#endPoint +
+                this.#rashBucket +
+                "/" +
+                this.#keyInTheRashBucketName,
+              {
+                method: "post",
+                body: JSON.stringify(objeto),
+                headers: { "Content-Type": "application/json" },
+              }
+            );
+            /* if (response.status != 200) {
+              return  response.text();
+            } else if (response.status == 200 && onsuccess) {
+              onsuccess();
+            }*/
+            return response;
+          } catch (e) {
+            console.log("rolou um erro");
+            throw e;
+          }
+        }
+      }
+    </script>
+
+    <script>
+      var keyInTheHashBcuket = "aprendendoIngles";
+      let email = "angelocarlotto@gmail.com";
+      let bancoDeDados = null;
+      var secretKVDB = null;
+      var queryString = window.location.search;
+      if (queryString) {
+        var params = new URLSearchParams(queryString);
+        if (params.has("id")) {
+          secretKVDB = params.get("id");
+        }
+      }
+
+      function traduzirPalavra(palavra) {
+        const tradutor = new google.translate.TranslateElement({
+          pageLanguage: "en",
+        });
+        tradutor.translate(palavra, "pt", (resultado) => {
+          console.log(resultado.translation);
+        });
+      }
+
+      divStatus.innerHTML = "carregando dados da API";
+      //caso a hashBucket nao tenha sido informado no URL
+      if (!secretKVDB) {
+        divStatus.innerHTML += "<br><br>criando nova chave da API";
+        BancoDeDados.getNewRashBucket(email).then(async (newHashBucket) => {
+          divStatus.innerHTML +=
+            "<br><br>nova chave obtida. inicializando dados.";
+
+          bancoDeDados = new BancoDeDados(
+            newHashBucket,
+            keyInTheHashBcuket,
+            email,
+            new Array()
+          );
+          await bancoDeDados.init();
+          divStatus.innerHTML +=
+            "<br><br>dados atualizado. pode utilizar a aplicação =]";
+          var newUrl = window.location.href + "?id=" + newHashBucket;
+          window.history.pushState({ path: newUrl }, "", newUrl);
+          /* novo codigo */
+        });
+      } else {
+        try {
+          divStatus.innerHTML +=
+            "<br><br>hash infromado, inicializando banco de dados";
+          bancoDeDados = new BancoDeDados(
+            secretKVDB,
+            keyInTheHashBcuket,
+            email,
+            new Array()
+          );
+          divStatus.innerHTML +=
+            "<br><br>dados atualizado. pode utilizar a aplicação =]";
+        } catch (e) {
+          divStatus.innerHTML += "<br><br>erro ao recuperar os dados";
+        }
+
+        /* novo codigo */
+      }
+      const MAX_PARTS = 10;
+      function readFileAsync(file) {
+        return new Promise((resolve, reject) => {
+          let reader = new FileReader();
+          reader.onload = () => {
+            resolve(reader.result);
+          };
+          reader.onerror = reject;
+          reader.readAsText(file);
+        });
+      }
+
+      async function obterPalavrasDistintas(texto) {
+        // Transforma todas as letras em minúsculas e remove todos os caracteres que não são letras ou espaços
+        const textoProcessado = texto
+          .toLowerCase()
+          .replace(/<[^>]+>|[^a-zA-Z\s]/g, ""); //.replace(/[^a-z\s]/g, "");
+        // Divide o texto processado em uma lista de palavras
+        const palavras = textoProcessado.split(/\s+/);
+        const frequencias = new Map();
+        palavras.forEach((palavra) => {
+          const palavraMaped = frequencias.get(palavra) || { frequencia: 0 };
+          frequencias.set(palavra, {
+            frequencia: palavraMaped.frequencia + 1,
+            conheco: 0,
+          });
+        });
+
+        return frequencias;
+      }
+      let listaDadosNovaLegenda = [];
+      async function processarArquivo(file) {
+        const fileContent = await readFileAsync(file);
+        const frequencias = await obterPalavrasDistintas(fileContent);
+        totalPalavras.innerHTML = `Total de Palavras:${frequencias.size}`;
+
+        let dadosNuvem = await bancoDeDados.dados;
+
+        listaDadosNovaLegenda = Array.from(frequencias).map((a, b) => {
+          return { palavra: a[0], valor: a[1] };
+        }); //.sort((a,b)=>{a.valor.conheco<b.valor.conheco })
+
+        listaDadosNovaLegenda
+          .filter((e) => dadosNuvem.some((ee) => ee.palavra == e.palavra))
+          .forEach((item, index, att) => {
+            item.valor.conheco = 1;
+            totalPalavrasContidasNEstaNovaLEgenda.innerHTML = `Total Palavras que jah conheço nesta legenda: ${
+              att.length
+            } ${((att.length / listaDadosNovaLegenda.length) * 100).toFixed(
+              2
+            )}%`;
+            totalPalavrasConheco.innerHTML = `Total Palavras que jah conheço ${dadosNuvem.length}`;
+          });
+
+        listaDadosNovaLegenda = listaDadosNovaLegenda.sort((a, b) => {
+          if (a.valor.conheco == b.valor.conheco) {
+            return a.palavra
+              .toUpperCase()
+              .localeCompare(b.palavra.toUpperCase()); // ignore upper and lowercase
+          }
+          return a.valor.conheco - b.valor.conheco;
+        });
+
+        await mostrarResultados(listaDadosNovaLegenda);
+      }
+
+      function dividirTexto(texto, numPartes) {
+        const tamanhoParte = Math.ceil(texto.length / numPartes);
+        const partes = [];
+        for (let i = 0; i < numPartes; i++) {
+          const inicio = i * tamanhoParte;
+          const parte = texto.substring(inicio, inicio + tamanhoParte);
+          partes.push(parte);
+        }
+        return partes;
+      }
+
+      async function mostrarResultados(frequencias) {
+        const tableBody = document.querySelector("#resultsTable tbody");
+        let dados = await bancoDeDados.dados;
+        frequencias.forEach((item, index, array) => {
+          let palavra = item.palavra;
+          let frequencia = item.valor.frequencia;
+
+          let row = tableBody.querySelector(`tr[data-palavra="${palavra}"]`);
+          if (!row) {
+            row = document.createElement("tr");
+            row.setAttribute("data-palavra", palavra);
+
+            const tdIndex = document.createElement("td");
+            tdIndex.textContent = index;
+            row.appendChild(tdIndex);
+
+            const palavraCell = document.createElement("td");
+            palavraCell.textContent = palavra;
+            row.appendChild(palavraCell);
+            const quantidadeCell = document.createElement("td");
+            quantidadeCell.setAttribute("data-quantidade", "0");
+            row.appendChild(quantidadeCell);
+            const quantidadeBotao = document.createElement("td");
+            quantidadeBotao.setAttribute("data-palavra", palavra);
+            let cor = "red";
+            if (dados) {
+              var palavraDados = dados.find((e) => e.palavra == palavra);
+              if (!palavraDados) {
+                //cor = "green";
+                quantidadeBotao.innerHTML = `<button class="btnConheco" style="color:${cor}" data-palavra="${palavra}"> Conheço</button>`;
+              } else {
+                quantidadeBotao.innerHTML = `✅`;
+              }
+              //palavraDados.
+            }
+            row.appendChild(quantidadeBotao);
+
+            tableBody.appendChild(row);
+          }
+          const quantidadeCell = row.querySelector("[data-quantidade]");
+          quantidadeCell.textContent =
+            parseInt(
+              quantidadeCell.textContent == "" ? 0 : quantidadeCell.textContent
+            ) + frequencia;
+        });
+      }
+      $("body").on("click", ".btnConheco", async function (a) {
+        a.target.innerHTML = "salvando...";
+        $(".btnConheco").attr("disabled", true);
+        let dados = await bancoDeDados.dados;
+
+        let dadoArray = listaDadosNovaLegenda.find(
+          (e) => e.palavra == a.target.dataset.palavra
+        );
+        dadoArray.conheco = 1;
+        dados.push(dadoArray);
+        //await (bancoDeDados.dados = dados);
+        await bancoDeDados.setDados(dados);
+        // a.target.style.color = "green";
+        // a.target.innerHTML = "salvo";
+        $(".btnConheco").attr("disabled", false);
+        a.currentTarget.parentElement.innerHTML = `✅`;
+      });
+      document.querySelector("#processButton").addEventListener("click", () => {
+        const fileInput = document.querySelector("#fileInput");
+        if (!fileInput.value) {
+          alert("Selecione um arquivo .str para processar.");
+          return;
+        }
+        const file = fileInput.files[0];
+        processarArquivo(file);
+      });
+    </script>
+  </body>
+</html>
