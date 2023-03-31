@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Tweet } from "./components/Tweet";
 import { AppRoutes } from "./AppRoutes";
+import { Tweet } from "./components/Tweet";
 
 function App() {
   const [tweets, setTweets] = useState<string[]>([
@@ -13,18 +13,14 @@ function App() {
     setTweets([...tweets, `tweet 5`]);
   }
   return (
-    <AppRoutes />
-    /* {
-      
-      
-       <div>
+    <div>
+      <AppRoutes></AppRoutes>
+      <Tweet text="teste" />
       {tweets.map((tweet) => {
         return <Tweet text={tweet} />;
       })}
-
       <button onClick={createTweet}>Adicionar Tweet</button>
-    </div> }
-    */
+    </div>
   );
 }
 
