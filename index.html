@@ -538,6 +538,35 @@
       let hours = 0;
       let timer;
 
+      async function downloadJson(jsonData, fileName) {
+        // Converte o objeto em uma string JSON
+        const jsonString = JSON.stringify(jsonData);
+
+        // Cria um objeto Blob com o conteúdo JSON
+        const blob = new Blob([jsonString], { type: "application/json" });
+
+        // Cria um link de download com o objeto Blob
+        const url = URL.createObjectURL(blob);
+
+        // Cria um elemento <a> para o link de download
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName || "dados.json";
+        link.innerHTML = "Baixar JSON";
+
+        // Adiciona o elemento <a> ao DOM e clica nele para iniciar o download
+        document.body.appendChild(link);
+        link.click();
+
+        // Remove o link de download e libera a memória
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+      async function downloadJsonButton() {
+        console.log(3);
+        let dados = await bancoDeDados.getDados();
+        await downloadJson(dados);
+      }
       function displayTimer() {
         const timerElement = document.getElementById("divLastUpdateSince");
         timerElement.textContent = `tempo desde última atualização: ${hours
@@ -1045,6 +1074,7 @@
               text: "Show My Location",
               callback: panTo,
             },
+            { text: "Download Database", callback: downloadJsonButton },
           ],
         }).setView([0, 0], 5); //.setView([-15.628326978852627, -56.14013671875001], 8);
 
