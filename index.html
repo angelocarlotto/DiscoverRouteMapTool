@@ -86,9 +86,9 @@
       </label>
     </div>
     <div>
-      <button onClick="panTo()">Leave bread crumbs</button>
+      <button >Leave bread crumbs</button>
       <label>
-        Auto(Every 5min) <input id="chkLiveTrack" type="checkbox" />
+        Auto(Every 5min) <input id="chkLiaveBreadCrumbs" type="checkbox" />
       </label>
     </div>
     <div id="mapid" class="map"></div>
@@ -1085,7 +1085,7 @@
         currentPositionAccuracy = L.circle([0, 0], { radius: 0 }).addTo(map);
 
         function panTo() {
-          map.panTo(currentPositionAccuracyCenter._latlng);
+          map.setView(currentPositionAccuracyCenter._latlng,18);
         }
 
         map.on("click", function (e) {
